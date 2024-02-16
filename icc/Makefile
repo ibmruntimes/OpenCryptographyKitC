@@ -429,7 +429,7 @@ tmp/tmp/dummyfile:  Build_OSSL_Complete tmp/dummyfile
 #- Split this into 2 phases for the OS/X fat binaries work - resolves circular dependencies
 # this is target for icclib085 shared library
 
-$(ICCDLL_NAME):  icclib$(OBJSUFX) $(LIBOBJS)  $(STLPRFX)zlib$(STLSUFX) tmp/tmp/dummyfile  signer$(EXESUFX) tracer.h extsig.h
+$(ICCDLL_NAME): privkey.rsa icclib$(OBJSUFX) $(LIBOBJS)  $(STLPRFX)zlib$(STLSUFX) tmp/tmp/dummyfile  signer$(EXESUFX) tracer.h extsig.h
 	$(SLD) $(SLDFLAGS) $(ICCLIB_LNK) $(EXPORT_FLAG)$(ICCLIB_EXPFILE)  icclib$(OBJSUFX) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) \
 		tmp/tmp/*$(OBJSUFX)  $(LDLIBS)
 #- Unstripped goes into NOSHIP
@@ -590,6 +590,15 @@ nist_algs$(EXESUFX): nist_algs1$(OBJSUFX)
 #=============================== Code sign/verify    ==============================
 
 #- stand alone signing tool
+privkey.rsa:
+	openssl genrsa -out privkey.rsa 2048
+
+pubkey.h: privkey.rsa
+	openssl rsa -in privkey.rsa -outform DER -RSAPublicKey_out > rsa_pub_key.der
+	echo "/*This is an auto generated code please DO NOT modify"
+	perl bin2hex.pl rsa_pub_key.der temp.h
+	cat temp.h >> pubkey.h
+	rm temp.h rsa_pub_key.der
 
 signer$(OBJSUFX): extsig.c
 	$(CC) -DSTANDALONE -DOPSYS=\"$(OPSYS)\" $(CFLAGS) -I$(OSSLINC_DIR) extsig.c $(OUT)$@
@@ -612,7 +621,7 @@ status$(OBJSUFX): status.c status.h icclib.h
 	$(CC) $(CFLAGS)  -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) status.c
 
 #- Build ICC FIPS code
-fips$(OBJSUFX): fips.c fips.h icclib.h iccerr.h $(PRNG_DIR)/fips-prng-RAND.h tracer.h 
+fips$(OBJSUFX): pubkey.h fips.c fips.h icclib.h iccerr.h $(PRNG_DIR)/fips-prng-RAND.h tracer.h 
 	$(CC) $(CFLAGS) -I./  -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) fips.c
 
 #- Compile the FIPS prng code
