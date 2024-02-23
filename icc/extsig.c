@@ -626,6 +626,9 @@ static int GenSig(FILE *fin, unsigned char *sigout, EVP_PKEY *key, long pos) {
       }
       EVP_MD_CTX_free(md_ctx);
     }
+    else {
+       printf("EVP error\n");
+    }
     fseek(fin, pos, SEEK_SET);
   }
   return (int)signL;
