@@ -171,7 +171,8 @@ static long HashCore(FILE *fin, long pos, EVP_MD_CTX *md_ctx,
         EVP_DigestUpdate(md_ctx, fbuf, len);
         pos -= (long)len;
       } else {
-        break;
+         printf("HashCore:fread failed\n");
+         break;
       }
     }
   }
@@ -622,7 +623,8 @@ static int GenSig(FILE *fin, unsigned char *sigout, EVP_PKEY *key, long pos) {
       HashCore(fin, pos, md_ctx, md);
       evpRC = EVP_SignFinal(md_ctx, sigout, &signL, key);
       if (1 != evpRC) {
-        signL = 0;
+         printf("EVP_SignFinal error %d\n", evpRC);
+         signL = 0;
       }
       EVP_MD_CTX_free(md_ctx);
     }
