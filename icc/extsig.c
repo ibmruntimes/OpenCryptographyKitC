@@ -151,6 +151,7 @@ static long HashCore(FILE *fin, long pos, EVP_MD_CTX *md_ctx,
                      const EVP_MD *md) {
   size_t len = 0;
   long amt = 0;
+  int rc = 0;
 
   if (NULL != fin) {
     if (0 == pos) {
@@ -159,7 +160,10 @@ static long HashCore(FILE *fin, long pos, EVP_MD_CTX *md_ctx,
     }
     fseek(fin, 0, SEEK_SET);
     EVP_MD_CTX_cleanup(md_ctx);
-    EVP_DigestInit(md_ctx, md);
+    rc = EVP_DigestInit(md_ctx, md);
+    if (1 != rc) {
+       printf("HashCore:EVP_DigestInit failed %d\n", rc);
+    }
     /* Work out how much to read */
     while (pos > 0) {
       amt = sizeof(fbuf);
@@ -168,7 +172,10 @@ static long HashCore(FILE *fin, long pos, EVP_MD_CTX *md_ctx,
       }
       len = fread(fbuf, 1, amt, fin);
       if (len > 0) {
-        EVP_DigestUpdate(md_ctx, fbuf, len);
+        rc = EVP_DigestUpdate(md_ctx, fbuf, len);
+        if (1 != rc) {
+           printf("HashCore:EVP_DigestUpdate failed %d\n", rc);
+        }
         pos -= (long)len;
       } else {
          printf("HashCore:fread failed\n");
@@ -623,15 +630,18 @@ static int GenSig(FILE *fin, unsigned char *sigout, EVP_PKEY *key, long pos) {
       HashCore(fin, pos, md_ctx, md);
       evpRC = EVP_SignFinal(md_ctx, sigout, &signL, key);
       if (1 != evpRC) {
-         printf("EVP_SignFinal error %d\n", evpRC);
+         printf("GenSig: EVP_SignFinal error %d\n", evpRC);
          signL = 0;
       }
       EVP_MD_CTX_free(md_ctx);
     }
     else {
-       printf("EVP error\n");
+       printf("GenSig: EVP error\n");
     }
     fseek(fin, pos, SEEK_SET);
+  }
+  else {
+     printf("GenSig: fin error\n");
   }
   return (int)signL;
 }
