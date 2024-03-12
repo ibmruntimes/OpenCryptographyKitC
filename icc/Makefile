@@ -591,10 +591,11 @@ nist_algs$(EXESUFX): nist_algs1$(OBJSUFX)
 
 #- stand alone signing tool
 privkey.rsa:
-	openssl genrsa -out privkey.rsa 2048
+	export LD_LIBRARY_PATH=~/OpenCryptographyKitC/openssl-1.1.1/
+	../openssl-1.1.1/apps/openssl genrsa -out privkey.rsa 2048
 
 pubkey.h: privkey.rsa
-	openssl rsa -in privkey.rsa -outform DER -RSAPublicKey_out > rsa_pub_key.der
+	../openssl-1.1.1/apps/openssl rsa -in privkey.rsa -outform DER -RSAPublicKey_out > rsa_pub_key.der
 	echo "/*This is an auto generated code please DO NOT modify*/" > pubkey.h
 	perl bin2hex.pl rsa_pub_key.der temp.h
 	cat temp.h >> pubkey.h
