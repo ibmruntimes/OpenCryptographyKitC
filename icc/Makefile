@@ -591,7 +591,6 @@ nist_algs$(EXESUFX): nist_algs1$(OBJSUFX)
 
 #- stand alone signing tool
 privkey.rsa:
-	export LD_LIBRARY_PATH=~/OpenCryptographyKitC/openssl-1.1.1/
 	../openssl-1.1.1/apps/openssl genrsa -out privkey.rsa 2048
 
 pubkey.h: privkey.rsa

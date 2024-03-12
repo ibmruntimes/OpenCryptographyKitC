@@ -19,7 +19,7 @@ jobs:
   # We can add more jobs here for different OS
   ICC-Config-debug:
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
@@ -28,6 +28,7 @@ jobs:
         run: |
           cd icc
           make OPSYS=AMD64_LINUX CONFIG=debug create_all
+          export LD_LIBRARY_PATH=/home/runner/work/OpenCryptographyKitC/OpenCryptographyKitC/openssl-1.1.1/
           make -k OPSYS=AMD64_LINUX CONFIG=debug all
           make -k OPSYS=AMD64_LINUX CONFIG=debug tests
           make -k OPSYS=AMD64_LINUX CONFIG=debug show_config
@@ -35,7 +36,7 @@ jobs:
 
   ICC-Compile:
     # a compile only -no test -quick check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
 
@@ -43,6 +44,7 @@ jobs:
         run: |
           cd icc
           make -k OPSYS=AMD64_LINUX CONFIG=release create_all
+          export LD_LIBRARY_PATH=/home/runner/work/OpenCryptographyKitC/OpenCryptographyKitC/openssl-1.1.1/
           make -k OPSYS=AMD64_LINUX CONFIG=release all
           make -k OPSYS=AMD64_LINUX CONFIG=release iccpkg
           make -k OPSYS=AMD64_LINUX CONFIG=release show_config
