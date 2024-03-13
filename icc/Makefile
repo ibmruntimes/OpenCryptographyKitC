@@ -591,7 +591,7 @@ nist_algs$(EXESUFX): nist_algs1$(OBJSUFX)
 
 #- stand alone signing tool
 privkey.rsa:
-	../openssl-1.1.1/apps/openssl genrsa -out privkey.rsa 2048
+	$(ICC_ROOT)/openssl-1.1.1/apps/openssl genrsa -out privkey.rsa 2048
 
 pubkey.h: privkey.rsa
 	../openssl-1.1.1/apps/openssl rsa -in privkey.rsa -outform DER -RSAPublicKey_out > rsa_pub_key.der
