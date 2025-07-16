@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>  
 
 #if 0
 #include <stdbool.h>
@@ -608,6 +609,100 @@ PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, size_t msg_le
    return 0;
 }
 
+int PQC_sign_speed_test(ICC_CTX* ctx, const char* algname, const char* hash, size_t msg_len, int num_iters, int encdec)
+{
+   int i, ret_val;
+   double total_keygen = 0, total_sign = 0, total_verify = 0;
+
+   for (i = 0; i < num_iters; i++) {
+      clock_t start, end;
+      pkbuf pk = { 0 }; /* public key */
+      skbuf sk = { 0 }; /* private/secret key */
+      sbuf signature = { 0 };
+      unsigned char* message = malloc(msg_len);
+      if (!message) {
+         printf("Memory allocation failed\n");
+         return 99;
+      }
+      count_up(message, msg_len);
+      /* Generate and time the public/private keypair */
+      start = clock();
+      ret_val = SignatureEVP_gen(ctx, algname, &pk, &sk, encdec);
+      end = clock();
+      if (ret_val != 0) {
+         printf("SignatureEVP_gen failed at iteration %d with code %d\n", i, ret_val);
+         return 1;
+      }
+      total_keygen += (double)(end - start) / CLOCKS_PER_SEC;
+
+      /* get rid of gen context */
+      if (sk.ctx) {
+         ICC_EVP_PKEY_CTX_free(ctx, sk.ctx);
+         sk.ctx = NULL;
+      }
+      if (encdec & (raw | pkcs8)) {
+         /* delete ICC key and context so we use private encoding */
+         if (sk.key) {
+            ICC_EVP_PKEY_free(ctx, sk.key);
+            sk.key = NULL;
+         }
+      }
+
+      /* Time signature generation */
+      start = clock();
+      ret_val = SignatureEVP_sign(ctx, &signature, &sk, message, msg_len, encdec, hash);
+      end = clock();
+      if (ret_val != 0) {
+         printf("SignatureEVP_sign failed at iteration %d with code %d\n", i, ret_val);
+         return 2;
+      }
+      total_sign += (double)(end - start) / CLOCKS_PER_SEC;
+
+      /* Time signature verification */
+      start = clock();
+      ret_val = SignatureEVP_verify(ctx, &pk, message, msg_len, &signature, encdec, hash);
+      end = clock();
+      if (ret_val != 0) {
+         printf("SignatureEVP_verify failed at iteration %d with code %d\n", i, ret_val);
+         return 3;
+      }
+      total_verify += (double)(end - start) / CLOCKS_PER_SEC;
+
+      /* Clean up signature data allocated resources */
+      if (signature.data) {
+         free(signature.data);
+         signature.data = NULL;
+      }
+      free(message);
+
+      /* Clean up allocated resources */
+      if (pk.der.data) {
+         free(pk.der.data);
+         pk.der.data = NULL;
+      }
+      if (sk.ctx) {
+         ICC_EVP_PKEY_CTX_free(ctx, sk.ctx);
+         sk.ctx = NULL;
+      }
+      if (sk.key) {
+         ICC_EVP_PKEY_free(ctx, sk.key);
+         sk.key = NULL;
+      }
+      if (sk.der.data) {
+         free(sk.der.data);
+         sk.der.data = NULL;
+      }
+   }
+
+   printf("\n=== Timing results over %d iterations ===\n", num_iters);
+   printf("Average keygen: %.6f sec\n", total_keygen / num_iters);
+   printf("Average sign  : %.6f sec\n", total_sign / num_iters);
+   printf("Average verify: %.6f sec\n", total_verify / num_iters);
+   printf("=========================================\n");
+
+   return 0;
+}
+
 static
 char* algs[] =
 {
@@ -677,6 +772,8 @@ int main(int argc, const char *argv[])
    size_t dataSize = 100;
    enum ed encdec = none;
    int rv = 0;
+   bool speed_test = false;
+
 
    /* Parse command-line arguments */
    if(argc > 1) {
@@ -744,6 +841,9 @@ int main(int argc, const char *argv[])
          else if (NULL != strstr(arg, "-alg")) {
             i++;
             algname = argv[i];
+         }
+         else if (NULL != strstr(arg, "-speed")) {
+            speed_test = true;
          }
          else if (*arg == '-') {
             /* another setting - pass it on */
@@ -853,8 +953,12 @@ int main(int argc, const char *argv[])
          algname = to_SIGNATURE_ALGNAME(3); /* Dilithium 768 */
          printf("algname = %s\n", algname?algname:"NULL");
       }
-      /* Execute the signature test */
-      rv = PQC_sign_test(icc_ctx, algname, hash, dataSize, verbose, encdec);
+      /* Execute the signature test or speed test if the flag is set */
+      if (speed_test) {
+         rv = PQC_sign_speed_test(icc_ctx, algname, hash, dataSize, 100, encdec);  // 100 iterations
+      } else {
+         rv = PQC_sign_test(icc_ctx, algname, hash, dataSize, verbose, encdec);
+      }
       if (rv) {
          OpenSSLError(icc_ctx);
          printf("%s: Error %d, try -? to get help\n", algname, rv);
