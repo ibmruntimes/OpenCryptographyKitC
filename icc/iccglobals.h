@@ -219,6 +219,7 @@ typedef enum {
 
 /*Param names used in OSSL_PARAMS Scraped from Openssl v3 "core_names.h"*/
 
+#define ICC_OSSL_KDF_PARAM_ITER              "iteration"
 #define ICC_OSSL_KDF_PARAM_THREADS           "threads"
 #define ICC_OSSL_KDF_PARAM_ARGON2_LANES      "lanes"
 #define ICC_OSSL_KDF_PARAM_ARGON2_MEMCOST    "memcost"
@@ -411,10 +412,23 @@ typedef enum {
 				   default entropy source is unusable, most likely
 				   a virtualized system or new hardware.
 				 - Valid values:  (<b>R/W1</b>)
-				   - "TRNG_HW" (default)
-				   - "TRNG_OS"
-				   - "TRNG_FIPS"
-			    */
+				   - "TRNG" (default) . Uses timing jitter. Tuned on startup to
+				       optimize performance.
+				   - "TRNG_ALT" Timing jitter mixed with an external source
+				     - If a hardware RNG is available, it will be used, otherwise
+				     - Unix/Linux it requires /dev/urandom or /dev/random
+				     - On Windows MSCAPI is used,
+				   - FIPS: allowed in FIPS mode
+			             - Reason: ALL modes meet FIPS requirements as entropy sources,
+				       and offline testing show they are of equivalent strength.
+				   - "TRNG" is in theory more resistant
+			               to local timing attacks and compromises of the extern RNG's
+				       than "TRNG_ALT" but neither class of attack is
+				       possible if the environmental constraints on FIPS compliance 
+				       are valid. i.e. single user mode
+				   - TRNG_ALT with hardware RNG is theoretically better on 
+				       virtualized systems.
+			         */
   ICC_INDUCED_FAILURE = 11,     /*!< Set to an active value (>0)
 				  before ICC_Init is called for the first time 
 				  this will force errors in ICC.
@@ -645,8 +659,8 @@ typedef enum {
   Flags passed to the SP800-38F Key wrap/unwrap function
 */
 #define ICC_KW_WRAP 1            /*!< If set key wrap, unset unwrap */ 
-#define ICC_KW_FORWARD_DECRYPT 2 /*!< If set wrap uses decrypt, if uset wrap uses encrypt. (recommend unset) */
-#define ICC_KW_PAD 4            /*!< If set we use the padded variant, if unset padded (and input data must be correctly blocked) */
+#define ICC_KW_FORWARD_DECRYPT 2 /*!< If set wrap uses decrypt, if unset wrap uses encrypt. (recommend unset) */
+#define ICC_KW_PAD 4             /*!< If set we use the padded variant, if unset padded (and input data must be correctly blocked) */
 
 typedef enum {
   SP800_38F_PARAM = 0,  /*!< Parameter error, invalid key length, invalid flags */

@@ -6,7 +6,7 @@
 // in the file LICENSE in the source distribution.
 *************************************************************************/
 
-/*************************************************************************
+//
 // Description:
 //             
 // Input:       functions.txt, symbols.txt
@@ -18,8 +18,8 @@
 //  to produce a makefile stub which
 // includes only those objects ICC depends on directly or 
 // indirectly to function. i.e. we produce a list of objects
-// excluding "dead code"
-*************************************************************************/
+// excluding "dead code"            
+//
 
 
 /* TBD

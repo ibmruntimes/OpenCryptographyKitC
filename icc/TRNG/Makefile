@@ -1,8 +1,8 @@
 #
 # * Copyright IBM Corp. 2023
 # *
-# * Licensed under the Apache License 2.0 (the "License").  You may not use
-# * this file except in compliance with the License.  You can obtain a copy
+# * Licensed under the Apache License 2.0 (the "License"). You may not use
+# * this file except in compliance with the License. You can obtain a copy
 # * in the file LICENSE in the source distribution.
 # 
 
@@ -58,6 +58,7 @@ TARGETS  = \
 	MINIMAL$(OBJSUFX) \
 	TRNG$(OBJSUFX) \
 	TRNG_ALT$(OBJSUFX) \
+	TRNG_ALT2$(OBJSUFX) \
 	entropy_to_NRBG$(OBJSUFX) \
 	SP800-90TRNG$(OBJSUFX)
 
@@ -86,7 +87,7 @@ clean:
 #- Note some platforms, SUN_SOL8/SUN64 AIX/AIX64 need added assembler tweaks
 #
 entropy_to_NRBG$(OBJSUFX): entropy_to_NRBG.h noise_to_entropy.h \
-	MINIMAL.h TRNG.h TRNG_ALT.h
+	MINIMAL.h TRNG.h TRNG_ALT.h TRNG_ALT2.h
 	$(CC) $(CFLAGS)  $(HDRS) $(ASM_TWEAKS) entropy_to_NRBG.c
 
 nist_algs$(OBJSUFX): nist_algs.c nist_algs.h
@@ -113,7 +114,10 @@ TRNG$(OBJSUFX): TRNG.c TRNG.h timer_entropy.h
 TRNG_ALT$(OBJSUFX): TRNG.c TRNG.h TRNG_ALT.h timer_entropy.h
 	$(CC) $(CFLAGS)  $(HDRS) TRNG_ALT.c
 
-ICC_NRBG$(OBJSUFX): ICC_NRBG.c MINIMAL.h TRNG.h TRNG_ALT.h
+TRNG_ALT2$(OBJSUFX): TRNG_ALT2.c timer_entropy.h ../fips-prng/SP800-90.h TRNG.h TRNG_ALT2.h
+	$(CC) $(CFLAGS) $(HDRS)  TRNG_ALT2.c
+
+ICC_NRBG$(OBJSUFX): ICC_NRBG.c MINIMAL.h TRNG.h TRNG_ALT.h TRNG_ALT2.h
 	$(CC) $(CFLAGS) $(HDRS)  ICC_NRBG.c
 
 SP800-90TRNG$(OBJSUFX):  ../fips-prng/SP800-90.h ../fips-prng/SP800-90i.h

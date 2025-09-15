@@ -32,10 +32,10 @@ UNIX_APP_DIR            	= $(OSSL_DIR)/apps
 # -lnsl -lsocket etc on various platforms
 #
 UNIX_SLIBCRYPTO              	= $(OSSL_DIR)/libcrypto.a
-UNIX_SLIBSSL			= $(OSSL_DIR)/libssl.a
+UNIX_SLIBSSL					= $(OSSL_DIR)/libssl.a
 UNIX_OPENSSL_LIBS               = $(UNIX_SLIBSSL) $(UNIX_SLIBCRYPTO) 
 
-WIN_APP_DIR        		= $(OSSL_DIR)/tmp32dll$($(OPSYS)_$(CONFIG)_OSSL_SUFFIX)
+WIN_APP_DIR        				= $(OSSL_DIR)/tmp32dll$($(OPSYS)_$(CONFIG)_OSSL_SUFFIX)
 WIN_LIB_DIR                     = $(OSSL_DIR)/out32dll$($(OPSYS)_$(CONFIG)_OSSL_SUFFIX)
 WIN_SLIBCRYPTO                  = $(OSSL_DIR)/libcrypto_static.lib
 WIN_SLIBSSL                     = $(OSSL_DIR)/libssl_static.lib
@@ -44,8 +44,8 @@ WIN_OPENSSL_LIBS                = wsock32.lib
 
 WIN32_APP_DIR      		= $(WIN_APP_DIR)
 WIN32_OPENSSL_LIBS 		= $(WIN_OPENSSL_LIBS)
-WIN32_SLIBCRYPTO                = $(WIN_SLIBCRYPTO)
-WIN32_SLIBSSL                   = $(WIN_SLIBSSL)
+WIN32_SLIBCRYPTO        = $(WIN_SLIBCRYPTO)
+WIN32_SLIBSSL           = $(WIN_SLIBSSL)
 
 WIN64_AMD_APP_DIR      		= $(WIN_APP_DIR)
 WIN64_AMD_OPENSSL_LIBS 		= $(WIN_OPENSSL_LIBS)

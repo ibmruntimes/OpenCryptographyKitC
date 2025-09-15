@@ -97,7 +97,7 @@ static int alt_read(unsigned char *buffer,int n)
     if(!BCRYPT_SUCCESS(status)) {
       rv = TRNG_REQ_SIZE; /* One of the parameters was likely not correct, or bad provider */
     }
-    }
+  }
 #endif
     break;
   default:
@@ -139,7 +139,7 @@ TRNG_ERRORS ALT_Init(E_SOURCE *E, unsigned char *pers, int perl)
     } else {
       rv = TRNG_INIT; /*error*/
     }
-    }
+  }
 #else
     /* On Unix .... */
     fd_alt = open("/dev/urandom",O_RDONLY);
@@ -218,9 +218,9 @@ void ALT_Final()
    hProvider = 0;
  }
 #else 
-  if(fd_alt >= 0) {
+ if(fd_alt >= 0) {
     close(fd_alt);
     fd_alt = -1;
-  }
-#endif
+ }
+#endif 
 }

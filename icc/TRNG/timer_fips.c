@@ -384,8 +384,8 @@ int FIPS_getbytes(E_SOURCE *E, unsigned char *buffer, int len)
                     /* Try and construct a byte of data from what was captured */
                     buffer[count] = c;
                     count++;
-                    proc_mem(TF,c); 
-                }    
+                    proc_mem(TF,c);
+                }
             }
             if(count == E_ESTB_BUFLEN) {
                 /*! \induced 222. TRNG_FIPS. Fake failure of TRNG source */
