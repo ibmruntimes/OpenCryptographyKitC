@@ -1,4 +1,6 @@
 
+ICC_RAND_OBJ = icc_rand$(OBJSUFX)
+
 #
 # Extra code needed to maintain API compatibility with older ICC's
 # we used to patch OpenSSL to do this, but now everything resides

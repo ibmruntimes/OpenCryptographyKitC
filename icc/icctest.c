@@ -1,14 +1,13 @@
 /*************************************************************************
-// Copyright IBM Corp. 2023
-//
-// Licensed under the Apache License 2.0 (the "License"). You may not use
-// this file except in compliance with the License. You can obtain a copy
-// in the file LICENSE in the source distribution.
+ Copyright IBM Corp. 2023
+
+ Licensed under the Apache License 2.0 (the "License"). You may not use
+ this file except in compliance with the License. You can obtain a copy
+ in the file LICENSE in the source distribution.
 *************************************************************************/
 
 /*************************************************************************
-// Description: Unit test for ICC
-//
+ Description: Unit test for ICC
 *************************************************************************/
 
 #include <stdio.h>
@@ -26,6 +25,7 @@
 /* default is ICC_ namespace */
 /* note: GSKit V8 loads ICC into global symbol with ICC_ symbols */
 #include "icc.h"
+#include "iccversion.h"
 
 /* Consider using the --tool=massif stacks=yes option to Valgrind instead
 #define STACK_DEBUG
@@ -706,93 +706,93 @@ int doEVPEnvelopeAndSignatureUnitTest(ICC_CTX *ICC_ctx)
        rv = ICC_ERROR;
     }
     else {
-    check_stack(1);
-    ICC_EVP_MD_CTX_init(ICC_ctx,md_ctx);
-    check_stack(1);
-    md = ICC_EVP_get_digestbyname(ICC_ctx,"SHA1");
+       check_stack(1);
+       ICC_EVP_MD_CTX_init(ICC_ctx, md_ctx);
+       check_stack(1);
+       md = ICC_EVP_get_digestbyname(ICC_ctx, "SHA1");
 
-    check_stack(1);
-    cipher_ctx = ICC_EVP_CIPHER_CTX_new(ICC_ctx);
-    ICC_EVP_CIPHER_CTX_init(ICC_ctx,cipher_ctx);
-    cipher = ICC_EVP_get_cipherbyname(ICC_ctx,"AES-128-CBC");
-    check_stack(1);
-    OSSLE(ICC_ctx);
-    pkey[0] = ICC_EVP_PKEY_new(ICC_ctx);
-    ICC_EVP_PKEY_set1_RSA(ICC_ctx,pkey[0],rsa);
-    check_stack(1);
-    retcode = ICC_EVP_SealInit(ICC_ctx,cipher_ctx,cipher,keyp,&ekeylen,iv,pkey,1);
-    OSSLE(ICC_ctx);   
-    retcode = ICC_EVP_SealUpdate(ICC_ctx,cipher_ctx,buf2,&int1,buf1,20);
-    i1 = int1;
-    retcode = ICC_EVP_SealFinal(ICC_ctx,cipher_ctx,buf2+int1,&int1);
-    i1 += int1;
-    ICC_EVP_CIPHER_CTX_cleanup(ICC_ctx,cipher_ctx);
-    OSSLE(ICC_ctx);
-    check_stack(1);
-    retcode = ICC_EVP_OpenInit(ICC_ctx,cipher_ctx,cipher,key,ekeylen,iv,pkey[0]);
-    retcode = ICC_EVP_OpenUpdate(ICC_ctx,cipher_ctx,buf1,&int1,buf2,i1);
-    retcode = ICC_EVP_OpenFinal(ICC_ctx,cipher_ctx,buf1+int1,&int1);
-    OSSLE(ICC_ctx);
-    check_stack(1);
-    ICC_EVP_PKEY_id(ICC_ctx,pkey[0]);
-    ICC_EVP_CIPHER_CTX_cleanup(ICC_ctx,cipher_ctx);
-    retcode = ICC_EVP_CIPHER_CTX_free(ICC_ctx,cipher_ctx);
-    check_stack(1);   
-    ICC_EVP_SignInit(ICC_ctx,md_ctx,md);
-    ICC_EVP_SignUpdate(ICC_ctx,md_ctx,NULL,0);
-    retcode = ICC_EVP_SignFinal(ICC_ctx,md_ctx,buf1,(unsigned int *)&int1,pkey[0]);
-    OSSLE(ICC_ctx);
-    ICC_EVP_VerifyInit(ICC_ctx,md_ctx,md);
-    ICC_EVP_VerifyUpdate(ICC_ctx,md_ctx,NULL,0);
-    retcode = ICC_EVP_VerifyFinal(ICC_ctx,md_ctx,buf1,(unsigned int)int1,pkey[0]);
-    OSSLE(ICC_ctx);
-    ICC_EVP_MD_CTX_cleanup(ICC_ctx,md_ctx);
-    check_stack(1);       
+       check_stack(1);
+       cipher_ctx = ICC_EVP_CIPHER_CTX_new(ICC_ctx);
+       ICC_EVP_CIPHER_CTX_init(ICC_ctx, cipher_ctx);
+       cipher = ICC_EVP_get_cipherbyname(ICC_ctx, "AES-128-CBC");
+       check_stack(1);
+       OSSLE(ICC_ctx);
+       pkey[0] = ICC_EVP_PKEY_new(ICC_ctx);
+       ICC_EVP_PKEY_set1_RSA(ICC_ctx, pkey[0], rsa);
+       check_stack(1);
+       retcode = ICC_EVP_SealInit(ICC_ctx, cipher_ctx, cipher, keyp, &ekeylen, iv, pkey, 1);
+       OSSLE(ICC_ctx);
+       retcode = ICC_EVP_SealUpdate(ICC_ctx, cipher_ctx, buf2, &int1, buf1, 20);
+       i1 = int1;
+       retcode = ICC_EVP_SealFinal(ICC_ctx, cipher_ctx, buf2 + int1, &int1);
+       i1 += int1;
+       ICC_EVP_CIPHER_CTX_cleanup(ICC_ctx, cipher_ctx);
+       OSSLE(ICC_ctx);
+       check_stack(1);
+       retcode = ICC_EVP_OpenInit(ICC_ctx, cipher_ctx, cipher, key, ekeylen, iv, pkey[0]);
+       retcode = ICC_EVP_OpenUpdate(ICC_ctx, cipher_ctx, buf1, &int1, buf2, i1);
+       retcode = ICC_EVP_OpenFinal(ICC_ctx, cipher_ctx, buf1 + int1, &int1);
+       OSSLE(ICC_ctx);
+       check_stack(1);
+       ICC_EVP_PKEY_id(ICC_ctx, pkey[0]);
+       ICC_EVP_CIPHER_CTX_cleanup(ICC_ctx, cipher_ctx);
+       retcode = ICC_EVP_CIPHER_CTX_free(ICC_ctx, cipher_ctx);
+       check_stack(1);
+       ICC_EVP_SignInit(ICC_ctx, md_ctx, md);
+       ICC_EVP_SignUpdate(ICC_ctx, md_ctx, NULL, 0);
+       retcode = ICC_EVP_SignFinal(ICC_ctx, md_ctx, buf1, (unsigned int*)&int1, pkey[0]);
+       OSSLE(ICC_ctx);
+       ICC_EVP_VerifyInit(ICC_ctx, md_ctx, md);
+       ICC_EVP_VerifyUpdate(ICC_ctx, md_ctx, NULL, 0);
+       retcode = ICC_EVP_VerifyFinal(ICC_ctx, md_ctx, buf1, (unsigned int)int1, pkey[0]);
+       OSSLE(ICC_ctx);
+       ICC_EVP_MD_CTX_cleanup(ICC_ctx, md_ctx);
+       check_stack(1);
 
-    OSSLE(ICC_ctx);
+       OSSLE(ICC_ctx);
 
-    check_stack(1);
-    nid = ICC_OBJ_txt2nid(ICC_ctx,"SHA1");
-    ICC_RSA_sign(ICC_ctx,nid,buf2,20,buf1,&uint1,rsa);
-    ICC_RSA_verify(ICC_ctx,nid,buf2,20,buf1,uint1,rsa);
-    check_stack(1);
-    ICC_EVP_PKEY_free(ICC_ctx,pkey[0]);
-    retcode = ICC_EVP_MD_CTX_cleanup(ICC_ctx,md_ctx);
-    retcode = ICC_EVP_MD_CTX_free(ICC_ctx,md_ctx);
+       check_stack(1);
+       nid = ICC_OBJ_txt2nid(ICC_ctx, "SHA1");
+       ICC_RSA_sign(ICC_ctx, nid, buf2, 20, buf1, &uint1, rsa);
+       ICC_RSA_verify(ICC_ctx, nid, buf2, 20, buf1, uint1, rsa);
+       check_stack(1);
+       ICC_EVP_PKEY_free(ICC_ctx, pkey[0]);
+       retcode = ICC_EVP_MD_CTX_cleanup(ICC_ctx, md_ctx);
+       retcode = ICC_EVP_MD_CTX_free(ICC_ctx, md_ctx);
 
 
-    check_stack(1);
-    /* RSA PSS section */
-    md_ctx = ICC_EVP_MD_CTX_new(ICC_ctx);
-    pkey[0] = ICC_EVP_PKEY_new(ICC_ctx);
-    ICC_EVP_PKEY_set1_RSA(ICC_ctx,pkey[0],rsa);
-    printf("\tEVP_Digest[Sign/Verify] ");
-    if(ICC_NOT_IMPLEMENTED != ICC_EVP_DigestSignInit(ICC_ctx,md_ctx,&pctx,md,NULL,pkey[0])) {
-      (void)ICC_EVP_PKEY_CTX_get0_pkey(ICC_ctx,pctx); /* Just code coverage */
-      ICC_EVP_PKEY_CTX_ctrl(ICC_ctx,pctx,ICC_EVP_PKEY_RSA,-1,ICC_EVP_PKEY_CTRL_RSA_PADDING,ICC_RSA_PKCS1_PSS_PADDING,NULL);
-      ICC_EVP_SignUpdate(ICC_ctx,md_ctx,NULL,0);
-      ICC_EVP_DigestSignFinal(ICC_ctx,md_ctx,NULL,&uint2);
-      ICC_EVP_DigestSignFinal(ICC_ctx,md_ctx,buf2,&uint2);
-      OSSLE(ICC_ctx);
-      ICC_EVP_DigestVerifyInit(ICC_ctx,md_ctx,&pctx,md,NULL,pkey[0]);
-      ICC_EVP_PKEY_CTX_ctrl(ICC_ctx,pctx,ICC_EVP_PKEY_RSA,-1,ICC_EVP_PKEY_CTRL_RSA_PADDING,ICC_RSA_PKCS1_PSS_PADDING,NULL);
-      ICC_EVP_VerifyUpdate(ICC_ctx,md_ctx,NULL,0);
-      ICC_EVP_DigestVerifyFinal(ICC_ctx,md_ctx,buf2,uint2);
-      OSSLE(ICC_ctx);
-      printf("\n");
+       check_stack(1);
+       /* RSA PSS section */
+       md_ctx = ICC_EVP_MD_CTX_new(ICC_ctx);
+       pkey[0] = ICC_EVP_PKEY_new(ICC_ctx);
+       ICC_EVP_PKEY_set1_RSA(ICC_ctx, pkey[0], rsa);
+       printf("\tEVP_Digest[Sign/Verify] ");
+       if (ICC_NOT_IMPLEMENTED != ICC_EVP_DigestSignInit(ICC_ctx, md_ctx, &pctx, md, NULL, pkey[0])) {
+          (void)ICC_EVP_PKEY_CTX_get0_pkey(ICC_ctx, pctx); /* Just code coverage */
+          ICC_EVP_PKEY_CTX_ctrl(ICC_ctx, pctx, ICC_EVP_PKEY_RSA, -1, ICC_EVP_PKEY_CTRL_RSA_PADDING, ICC_RSA_PKCS1_PSS_PADDING, NULL);
+          ICC_EVP_SignUpdate(ICC_ctx, md_ctx, NULL, 0);
+          ICC_EVP_DigestSignFinal(ICC_ctx, md_ctx, NULL, &uint2);
+          ICC_EVP_DigestSignFinal(ICC_ctx, md_ctx, buf2, &uint2);
+          OSSLE(ICC_ctx);
+          ICC_EVP_DigestVerifyInit(ICC_ctx, md_ctx, &pctx, md, NULL, pkey[0]);
+          ICC_EVP_PKEY_CTX_ctrl(ICC_ctx, pctx, ICC_EVP_PKEY_RSA, -1, ICC_EVP_PKEY_CTRL_RSA_PADDING, ICC_RSA_PKCS1_PSS_PADDING, NULL);
+          ICC_EVP_VerifyUpdate(ICC_ctx, md_ctx, NULL, 0);
+          ICC_EVP_DigestVerifyFinal(ICC_ctx, md_ctx, buf2, uint2);
+          OSSLE(ICC_ctx);
+          printf("\n");
        }
        else {
-      printf("N/A\n");
-    }
+          printf("N/A\n");
+       }
 
-    ICC_EVP_MD_CTX_free(ICC_ctx,md_ctx);
-    ICC_EVP_PKEY_free(ICC_ctx,pkey[0]);
-    if(retcode != 1) {
-      rv = retcode;
+       ICC_EVP_MD_CTX_free(ICC_ctx, md_ctx);
+       ICC_EVP_PKEY_free(ICC_ctx, pkey[0]);
+       if (retcode != 1) {
+          rv = retcode;
+       }
+       ICC_RSA_free(ICC_ctx, rsa);
+       printf("EVP Envelope And Signature Unit test successfully completed!\n");
     }
-    ICC_RSA_free(ICC_ctx,rsa);
-    printf("EVP Envelope And Signature Unit test successfully completed!\n");
-  }
   }
   if(NULL != status) {
     free(status);
@@ -3177,23 +3177,23 @@ int doPostStartupTest(ICC_CTX *ICC_ctx, ICC_STATUS *status) {
 #if 0
   /* this may fail if the path is actually shorter than 9 bytes */
   {
-  char value1[9]; /* Deliberately broken */
+     char value1[9]; /* Deliberately broken */
 
-  value1[0] = '\0';
-  check_stack(0);
-  /* This SHOULD return an error, but caused a segv on earlier ICC's */
-  retcode = ICC_GetValue(ICC_ctx, status, ICC_INSTALL_PATH, (void *)value1, 9);
-  if (retcode == ICC_OK) {
-    printf("ICC vulnerable to buffer overrun in ICC_GetValue() - expect a "
-           "crash [%s]\n",
-           value1);
-    rv = ICC_ERROR;
-  }
-  retcode = ICC_SetValue(ICC_ctx, status, ICC_INSTALL_PATH, (void *)value1);
-  if( retcode == ICC_OK) {
-    printf("ICC vulnerable to invalid ICC_SetValue() - expect a crash [%s]\n",value1);
-    rv = ICC_ERROR;
-  }
+     value1[0] = '\0';
+     check_stack(0);
+     /* This SHOULD return an error, but caused a segv on earlier ICC's */
+     retcode = ICC_GetValue(ICC_ctx, status, ICC_INSTALL_PATH, (void *)value1, 9);
+     if (retcode == ICC_OK) {
+       printf("ICC vulnerable to buffer overrun in ICC_GetValue() - expect a "
+              "crash [%s]\n",
+              value1);
+       rv = ICC_ERROR;
+     }
+     retcode = ICC_SetValue(ICC_ctx, status, ICC_INSTALL_PATH, (void *)value1);
+     if( retcode == ICC_OK) {
+       printf("ICC vulnerable to invalid ICC_SetValue() - expect a crash [%s]\n",value1);
+       rv = ICC_ERROR;
+     }
   }
 #endif
   value[0] = '\0';
@@ -3478,10 +3478,10 @@ int doUnitTest(const char* iccPath, int test,char *fips, int unicode)
           if(testnum == exclude) {
             testnum = testnum + 1;
           } else {
-          OSSLE(ICC_ctx);
-          testnum = runTest(ICC_ctx, status, testnum);
+            OSSLE(ICC_ctx);
+            testnum = runTest(ICC_ctx, status, testnum);
+          }
         }
-      }
       }
       else
       {
@@ -3555,15 +3555,6 @@ int doUnitTest(const char* iccPath, int test,char *fips, int unicode)
 
   return rv;
 }
-
-/* from iccversion.h*/
-#ifndef ICC_GIT_BRANCH
-#define ICC_GIT_BRANCH         "n/a"
-#endif
-#ifndef ICC_GIT_HASH
-#define ICC_GIT_HASH           "n/a"
-#endif
-
 static void usage(char *prgname,char *text)
 {
    static const char* ICC_vinfo =
@@ -3616,10 +3607,10 @@ int main(int argc, char *argv[])
        }
     } else if(strncmp("-t",argv[argi],2) == 0) {
       if(argc > (argi+1)) {
-	tuner = atoi(argv[argi+1]);
-	argi++;
+	      tuner = atoi(argv[argi+1]);
+	      argi++;
       } else {
-	tuner = 2;
+	      tuner = 2;
       }
     } else if(strncmp("-x",argv[argi],2) == 0) {
       if(argc > (argi+1)) {

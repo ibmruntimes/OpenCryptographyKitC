@@ -1,8 +1,8 @@
 /*************************************************************************
 // Copyright IBM Corp. 2023
 //
-// Licensed under the Apache License 2.0 (the "License").  You may not use
-// this file except in compliance with the License.  You can obtain a copy
+// Licensed under the Apache License 2.0 (the "License"). You may not use
+// this file except in compliance with the License. You can obtain a copy
 // in the file LICENSE in the source distribution.
 *************************************************************************/
 
@@ -30,9 +30,6 @@
 
 #else   /* !ICC_OFFICIAL_BUILD */
 
-#  define ICC_PRODUCT_NAME       "ICC"
-#  define ICC_VERSION_MOD        0
-#  define ICC_VERSION_FIX        0
 #  define ICC_BUILD_DATE         0
 #  define ICC_BUILD_TIME         0
 #  define ICC_EXTRACT_DATE       0
@@ -42,6 +39,15 @@
 
 /* these will normally come from buildinfo.h */
 
+#ifndef ICC_PRODUCT_NAME
+#define ICC_PRODUCT_NAME "ICC"
+#endif
+#if !defined(ICC_VERSION_MOD)
+#define ICC_VERSION_MOD 14
+#endif
+#if !defined(ICC_VERSION_FIX)
+#define ICC_VERSION_FIX 0
+#endif
 #ifndef ICC_GIT_BRANCH
 #define ICC_GIT_BRANCH         "n/a"
 #endif
@@ -53,14 +59,6 @@
 #endif
 #ifndef OCKC_GIT_HASH
 #define OCKC_GIT_HASH          "n/a"
-#endif
-
-#if !defined(ICC_VERSION_MOD)
-#   define ICC_VERSION_MOD 11
-#endif
-
-#if !defined(ICC_VERSION_FIX)
-#define ICC_VERSION_FIX 0
 #endif
 
 /* Utility MACROs */

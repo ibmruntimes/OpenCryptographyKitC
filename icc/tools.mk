@@ -17,8 +17,16 @@ TOOLS =	 \
 	smalltest$(EXESUFX) \
 	smalltest4$(EXESUFX) \
 	GenRndData2$(EXESUFX) \
-	GenRndDataFIPS$(EXESUFX) \
+	nist_algs$(EXESUFX) \
+	test_NIST_algs$(EXESUFX) \
+	FIPS_collector$(EXESUFX) \
+	FIPS_filter$(EXESUFX) \
+	FIPS_filter_debias$(EXESUFX) \
+	squeeze$(EXESUFX) \
 	sha256x$(EXESUFX)
+
+# Not currently built because it's the same as GenRndData
+# 	GenRndDataFIPS$(EXESUFX)
 
 # Disabled. Tried, didn't work
 #	FIPS_mem_collector$(EXESUFX) \
@@ -115,16 +123,16 @@ icclib_sa$(OBJSUFX): icclib.c loaded.c loaded.h tracer.h extsig.h $(SDK_DIR)/mys
 
 icclib_sa$(EXESUFX): icclib_sa$(OBJSUFX) $(ARGON) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) tmp/tmp/dummyfile extsig$(OBJSUFX) signer$(EXESUFX)
 	$(LD) $(LDFLAGS) icclib_sa$(OBJSUFX) $(ARGON) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) tmp/tmp/*$(OBJSUFX) $(LDLIBS) $(PQCLIBS)
-	$(OPENSSL_PATH_SETUP) ./signer$(EXESUFX) ICCLIB_SA.txt  privkey.rsa -SELF -FILE icclib_sa$(EXESUFX) $(TWEAKS)
+	$(OPENSSL_PATH_SETUP) ./signer$(EXESUFX) ICCLIB_SA.txt privkey.rsa -SELF -FILE icclib_sa$(EXESUFX) $(TWEAKS)
 
 
 #- Build ICC test executables
 
-smalltest$(OBJSUFX):  tools/smalltest.c $(SDK_DIR)/icc.h $(SDK_DIR)/icc_a.h $(SDK_DIR)/iccglobals.h
-	$(CC) $(CFLAGS)  -I./ -I $(SDK_DIR) tools/smalltest.c
+smalltest$(OBJSUFX): tools/smalltest.c $(SDK_DIR)/icc.h $(SDK_DIR)/icc_a.h $(SDK_DIR)/iccglobals.h
+	$(CC) $(CFLAGS) -I./ -I $(SDK_DIR) tools/smalltest.c
 
 smalltest$(EXESUFX): $(ICCDLL) $(ICCLIB) smalltest$(OBJSUFX) 
-	$(LD) $(LDFLAGS) smalltest$(OBJSUFX) $(ICCLIB) $(LDLIBS)
+	$(LD) $(LDFLAGS) smalltest$(OBJSUFX) $(ICCLIB) $(LDLIBS) 
 
 smalltest4$(OBJSUFX):  tools/smalltest4.c $(SDK_DIR)/icc.h $(SDK_DIR)/icc_a.h $(SDK_DIR)/iccglobals.h
 	-$(CC) $(CFLAGS)  -I./ -I $(SDK_DIR) tools/smalltest4.c
