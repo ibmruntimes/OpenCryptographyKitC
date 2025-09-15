@@ -230,7 +230,7 @@ create_openssl: $(ICC_ROOT)/openssl_source/$(OPENSSL_VER)-icc.tar.gz
 	)
 # test if the extract worked
 	cd $(ICC_ROOT)/$(OPENSSL_VER)
-	-rm Build_OSSL_Complete
+	if [ -e Build_OSSL_Complete ] ; then rm Build_OSSL_Complete ; fi
 
 #- Create the OpenSSL sources from tarfile and patches on zOS
 #- This has NO automated dependencies as that messes the automated builds
