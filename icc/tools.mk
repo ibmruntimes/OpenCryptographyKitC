@@ -18,11 +18,6 @@ TOOLS =	 \
 	smalltest4$(EXESUFX) \
 	GenRndData2$(EXESUFX) \
 	nist_algs$(EXESUFX) \
-	test_NIST_algs$(EXESUFX) \
-	FIPS_collector$(EXESUFX) \
-	FIPS_filter$(EXESUFX) \
-	FIPS_filter_debias$(EXESUFX) \
-	squeeze$(EXESUFX) \
 	sha256x$(EXESUFX)
 
 # Not currently built because it's the same as GenRndData
