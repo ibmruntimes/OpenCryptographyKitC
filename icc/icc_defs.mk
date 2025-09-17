@@ -17,7 +17,7 @@ DEFAULT_TEST_CMD       = ./icctest$(EXESUFX)
 DEFAULT_OPENSSL_TEST_CMD = cd $(OSSL_DIR); make tests; apps/openssl speed
 # This is actually used to build an rc file on Windows
 DEFAULT_ASMOBJS        =
-DEFAULT_EXTRAS         = PKCS11 PKCS11_PERF
+DEFAULT_EXTRAS         =
 DEFAULT_debug_FILES    = icclib$(VTAG).pdb openssl.pdb vc90.pdb \
 			$(OSSL_DIR)/out32dll/libeay32.pdb 
 DEFAULT_MANIFESTS      =
@@ -279,7 +279,7 @@ WIN32_TEST_CMD       = $(DEFAULT_TEST_CMD)
 WIN32_OPENSSL_TEST_CMD = echo openssl tests not run
 # This is actually used to build an rc file on Windows
 WIN32_ASMOBJS        = icc.res
-WIN32_EXTRAS         = PKCS11 PKCS11_PERF
+WIN32_EXTRAS         =
 WIN32_debug_FILES    = icclib$(VTAG).pdb openssl.pdb vc90.pdb \
 			$(OSSL_DIR)/out32dll/libeay32.pdb 
 WIN32_MANIFESTS      =
@@ -332,7 +332,7 @@ WIN32_VS2013_TEST_CMD       = $(WIN32_TEST_CMD)
 WIN32_VS2013_OPENSSL_TEST_CMD = $(WIN32_OPENSSL_TEST_CMD)
 # This is actually used to build an rc file on Windows
 WIN32_VS2013_ASMOBJS        = icc.res
-WIN32_VS2013_EXTRAS         = PKCS11 PKCS11_PERF
+WIN32_VS2013_EXTRAS         = $(WIN32_EXTRAS)
 WIN32_VS2013_debug_FILES    = icclib$(VTAG).pdb openssl.pdb vc90.pdb \
 			$(OSSL_DIR)/out32dll/libeay32.pdb 
 WIN32_VS2013_MANIFESTS      =
@@ -414,7 +414,7 @@ LINUX_OPENSSL_PATH_SETUP = export LD_LIBRARY_PATH=$(OSSL_DIR);
 LINUX_BUILD_OSSL     = cd $(OSSL_DIR); ./Configure threads shared $(OSSL_FLAGS) $(LINUX_$(CONFIG)_CFLAGS) -m32 linux-elf; make depend; make
 LINUX_CLEAN_OSSL     = cd $(OSSL_DIR); make clean
 LINUX_TEST_CMD       = $(DEFAULT_TEST_CMD)
-LINUX_EXTRAS  	     = PKCS11 PKCS11_PERF
+# LINUX_EXTRAS  	     = PKCS11 PKCS11_PERF
 
 LINUX_CMAKE_OQS      = cmake -G "Unix Makefiles" $(OQS_FLAGS) -DBUILD_ONLY="s3;iam;sts" -DCMAKE_C_FLAGS=-m32 .
 

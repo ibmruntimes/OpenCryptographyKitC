@@ -6,8 +6,6 @@
 // this file except in compliance with the License. You can obtain a copy
 // in the file LICENSE in the source distribution.
 *************************************************************************/
-/* GCM table driven acceleration: Aaron Cristensen November 2007. */
-
 
 #ifndef HEADER_AES_GCM_H
 #define HEADER_AES_GCM_H

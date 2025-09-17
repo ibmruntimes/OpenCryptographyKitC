@@ -795,8 +795,8 @@ OPENSSLPREFIX=;
 #! @param callback Feedback for a progress indicator. See the OpenSSL docs. Typically, set this to NULL.;  
 #! @param cb_arg Information to be passed to the callback method when it is called. Typically, set this to NULL;
 #! @return an pointer to a newly allocated RSA structure containing both the public and private RSA keys or NULL on failure;
-#! @note The callback and cb_arg parameters should be set to NULL in IBM applications. ;
-#! While in theory these paramaters could be used we can envisage no IBM application scenario ;
+#! @note The callback and cb_arg parameters should be set to NULL for ICC consumers. ;
+#! While in theory these paramaters could be used we can envisage no ICC consumer scenario ;
 #! where it would be useful to set these to non-NULL values ;
 
 0abcdEPMC  RSA *  RSA_generate_key(int bits, unsigned long e,void (*callback)(int,int,void *),void *cb_arg);
