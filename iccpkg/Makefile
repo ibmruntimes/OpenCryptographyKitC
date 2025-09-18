@@ -178,7 +178,7 @@ pqc_tests:
 	echo "No dks pqc support"
 else
 pqc_tests:
-	$(MAKE) -C pqc tests
+	"$(MAKE)" -C pqc tests
 endif
 
 #	cache_test$(EXESUFX) Specify manually as a target, may not build/run on all platforms due
@@ -336,7 +336,7 @@ $(GSK_SDK)/argon2_example.c: $(GSK_SDK) Argon2/argon2_example.c
 	$(CP) Argon2/argon2_example.c $@
 
 pqc/kemtest$(EXESUFX):
-	$(MAKE) -C pqc all
+	"$(MAKE)" -C pqc all
 
 $(GSK_SDK)/kemtest$(EXESUFX): $(GSK_SDK) pqc/kemtest$(EXESUFX)
 	$(CP) pqc/kemtest$(EXESUFX) $@
@@ -345,7 +345,7 @@ $(GSK_SDK)/kemtest.c: $(GSK_SDK) pqc/kemtest.c
 	$(CP) pqc/kemtest.c $@
 
 pqc/sigtest$(EXESUFX):
-	$(MAKE) -C pqc all
+	"$(MAKE)" -C pqc all
 
 $(GSK_SDK)/sigtest$(EXESUFX): $(GSK_SDK) pqc/sigtest$(EXESUFX)
 	$(CP) pqc/sigtest$(EXESUFX) $@
@@ -465,9 +465,9 @@ clean: clean_jgsk clean_ickc
 	-$(RM) -r $(GSK_SDK)/*
 	-$(RM) -r $(TMP_SRC) $(TMP_OBJS)
 	-$(RM) exports_old/*.exp exports_old/iccstepZOS.h
-	-$(MAKE) -C TOTP clean
+	"$(MAKE)" -C TOTP clean
 	-$(RM) Doxyfile
-	-$(MAKE) -C pqc clean
+	"$(MAKE)" -C pqc clean
 
 
 # Note: Need to rm after copy as Windows looks in the same directory as exe's
@@ -523,9 +523,7 @@ cache_test$(OBJSUFX): gsk_wrap2.c gsk_wrap2_a.c $(ICC_ROOT)/icc/loaded.c name_ca
 # Note different from icc/icctest which links direct to the module
 
 icctest$(OBJSUFX): $(ICC_ROOT)/icc/icctest.c $(SDK_HEADERS)
-	$(CP) $(ICC_ROOT)/icc/icctest.c .
-	$(CC) $(CFLAGS) -I$(GSK_SDK) -I$(ICC_ROOT)/icc -DICCPKG icctest.c 
-	-$(RM) icctest.c
+	$(CC) $(CFLAGS) -I$(GSK_SDK) -I$(ICC_ROOT)/icc -DICCPKG $(ICC_ROOT)/icc/icctest.c
 
 icctest$(EXESUFX): icctest$(OBJSUFX) $(GSK_LIB)
 	$(LD) $(LDFLAGS) icctest$(OBJSUFX) $(ICCPKG_LIBS) $(LDLIBS)
@@ -630,21 +628,21 @@ pktest_direct$(EXESUFX): pktest$(OBJSUFX) pktest_common$(OBJSUFX) \
 
 # Build the performance test code for ICCPKG
 $(ICCPKG_PERF): $(GSK_LIB)
-	$(SETUP_ICCSPEED) $(MAKE) -C $(ICC_ROOT)/iccspeed OPSYS=$(OPSYS) CONFIG=$(CONFIG) BUILD=$(BUILD) XPLINK=$(XPLINK) gsk
+	$(SETUP_ICCSPEED) "$(MAKE)" -C $(ICC_ROOT)/iccspeed OPSYS=$(OPSYS) CONFIG=$(CONFIG) BUILD=$(BUILD) XPLINK=$(XPLINK) gsk
 	$(CP) $(ICC_ROOT)/iccspeed/bin/$(OPSYS)/icc_perf$(EXESUFX) $@
 
 $(JICC_PERF): $(JGSK_LIB)
-	$(SETUP_ICCSPEED) $(MAKE) -C $(ICC_ROOT)/iccspeed OPSYS=$(OPSYS) CONFIG=$(CONFIG) BUILD=$(BUILD) XPLINK=$(XPLINK) jgsk;
+	$(SETUP_ICCSPEED) "$(MAKE)" -C $(ICC_ROOT)/iccspeed OPSYS=$(OPSYS) CONFIG=$(CONFIG) BUILD=$(BUILD) XPLINK=$(XPLINK) jgsk;
 	$(CP) $(ICC_ROOT)/iccspeed/bin/$(OPSYS)/jicc_perf$(EXESUFX) $@
 
 $(ICC_ROOT)/pk11/keystoretool$(EXESUFX):
-	$(MAKE) -C $(ICC_ROOT)/pk11 keystoretool$(EXESUFX)
+	"$(MAKE)" -C $(ICC_ROOT)/pk11 keystoretool$(EXESUFX)
 
 $(GSK_SDK)/keystoretool$(EXESUFX): $(ICC_ROOT)/pk11/keystoretool$(EXESUFX)
 	$(CP) $(ICC_ROOT)/pk11/keystoretool$(EXESUFX) $@
 
 $(PK11_PERF): $(GSK_LIB)
-	$(SETUP_ICCSPEED) $(MAKE) -C $(ICC_ROOT)/iccspeed OPSYS=$(OPSYS) CONFIG=$(CONFIG) BUILD=$(BUILD) XPLINK=$(XPLINK) pkcs11
+	$(SETUP_ICCSPEED) "$(MAKE)" -C $(ICC_ROOT)/iccspeed OPSYS=$(OPSYS) CONFIG=$(CONFIG) BUILD=$(BUILD) XPLINK=$(XPLINK) pkcs11
 	$(CP) $(ICC_ROOT)/iccspeed/bin/$(OPSYS)/pkcs11_thread$(EXESUFX) $@
 
 $(GSK_RNG): $(GSK_LIB) GenRndData2$(EXESUFX)
