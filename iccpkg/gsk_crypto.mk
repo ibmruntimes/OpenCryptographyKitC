@@ -8,16 +8,20 @@
 # GSkit version we are building for
 GSK_VER		=	8
 
+# ref PACKAGE_DIR
+$(ICC_ROOT)/package:
+	$(MKDIR) $@
+
 # Where we park the binaries
 GSK_DIR		=	$(ICC_ROOT)/package/gskit_crypto
 
-$(GSK_DIR):
+$(GSK_DIR): $(ICC_ROOT)/package
 	$(MKDIR) $@
 
 # Where we find the header files for using GSkit-crypto
 GSK_SDK		=	$(ICC_ROOT)/package/gsk_sdk
 
-$(GSK_SDK):
+$(GSK_SDK): $(ICC_ROOT)/package
 	$(MKDIR) $@
 
 # static lib must be seperate from the shared lib
@@ -43,11 +47,11 @@ $(GSK_SDK)/iccglobals.h: $(ICC_ROOT)/icc/iccglobals.h $(GSK_SDK)
 # Directories for Java version of GSkit_Crypto
 #
 JGSK_DIR		= $(ICC_ROOT)/package/jgskit_crypto
-$(JGSK_DIR):
+$(JGSK_DIR) $(JGSK_DIR)/: $(ICC_ROOT)/package
 	$(MKDIR) $@
 
 JGSK_SDK		= $(ICC_ROOT)/package/jgsk_sdk
-$(JGSK_SDK):
+$(JGSK_SDK) $(JGSK_SDK)/: $(ICC_ROOT)/package
 	$(MKDIR) $@
 $(JGSK_SDK)/docs: $(JGSK_SDK)
 	$(MKDIR) $@
@@ -64,11 +68,11 @@ $(JGSK_SDK)/debug: $(JGSK_SDK)
 # Directories for ICKC_ namespaced version
 #
 ICKC_DIR = $(ICC_ROOT)/package/ickc_crypto
-$(ICKC_DIR):
+$(ICKC_DIR): $(ICC_ROOT)/package
 	$(MKDIR) $@
 
 ICKC_SDK = $(ICC_ROOT)/package/ickc_sdk
-$(ICKC_SDK):
+$(ICKC_SDK): $(ICC_ROOT)/package
 	$(MKDIR) $@
 $(ICKC_SDK)/docs: $(ICKC_SDK)
 	$(MKDIR) $@

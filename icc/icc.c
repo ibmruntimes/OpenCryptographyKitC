@@ -54,7 +54,11 @@ const char ICC_SCCSInfo[] =
     "@(#)                  restricted by GSA ADP Schedule Contract with IBM Corp.\n"
     "@(#)ProductName:      " ICC_PRODUCT_NAME "\n"
     "@(#)ProductVersion:   " ICC_PRODUCT_VERSION "\n"
-  };
+    "@(#)GIT_BRANCH:       " ICC_GIT_BRANCH "\n"
+    "@(#)GIT_HASH :        " ICC_GIT_HASH "\n"
+    "@(#)OCKC_BRANCH:      " OCKC_GIT_BRANCH "\n"
+    "@(#)OCKC_HASH :       " OCKC_GIT_HASH "\n"
+};
 
 
 /*#define DEBUG_VERBOSE
@@ -447,7 +451,7 @@ ICC_CTX *ICC_Init(ICC_STATUS *status, const char *iccpath) {
   }
   /* No sucessful initializations so far ? */
   if (NULL == ICCGlobal.hICCLib) {
-    /* Fallback code, some ICC consumers move ICC as part of
+      /* Fallback code, some ICC consumers move ICC as part of
        installing copies of the software in non-default locations.
        For this to work, LD_LIBRARY_PATH or the equivalent must be set
        so we traverse this to build a fallback search path for the ICC

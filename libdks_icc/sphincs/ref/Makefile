@@ -3,7 +3,10 @@ PARAMS = sphincs-$(VARIANT)
 THASH = robust
 
 CC=/usr/bin/gcc
+# -O3 because KAT runs too slow for CI with -O0
 LINUX_CFLAGS=-Wall -Wextra -Wpedantic -O3 -std=c99 -Wconversion -Wmissing-prototypes
+# 64 bit picks up these
+LINUX_debug_CFLAGS = -g3 -O3
 
 MY_CFLAGS=-DPARAMS=$(PARAMS) $(EXTRA_CFLAGS)
 
@@ -31,8 +34,8 @@ HEADERS += $(HASH_HEADERS)
 
 SOURCES = $(LIB_SOURCES) $(addprefix $(VARIANT)-,randombytes.c)
 
-DET_SOURCES = $(SOURCES:randombytes.%=rng.%)
-DET_HEADERS = $(HEADERS:randombytes.%=rng.%)
+DET_SOURCES = $(SOURCES:$(VARIANT)-randombytes.%=$(VARIANT)-rng.%) $(HASH_SOURCES)
+DET_HEADERS = $(HEADERS:$(VARIANT)-randombytes.%=$(VARIANT)-rng.%) $(HASH_HEADERS)
 
 TESTS =         test/fors \
 		test/spx \
@@ -44,7 +47,7 @@ OS=WIN
 
 .PHONY: default clean test benchmark static
 
-default: PQCgenKAT_sign
+default: nistkat
 
 ICC_ROOT=../../..
 include ../../defs.mk
@@ -54,11 +57,14 @@ CFLAGS+=$(MY_CFLAGS)
 Makefile: ../../defs.mk
 	touch $@
 
-all: static PQCgenKAT_sign tests benchmarks
+all: static nistkat tests benchmarks
 
-tests: $(TESTS)
+tests:
+	$(OPENSSL_PATH_SETUP) ./PQCgenKAT_$(VARIANT)-sign$(EXESUFX)
 
 test: $(TESTS:=.exec)
+
+nistkat: PQCgenKAT_$(VARIANT)-sign$(EXESUFX)
 
 benchmarks: $(BENCHMARK)
 
@@ -76,17 +82,17 @@ libsphincs_ref-hash-$(PARAMS)$(STLSUFX): $(HASH_SOURCES) $(HASH_HEADERS) Makefil
 	$(AR) $(ARFLAGS) $(subst .c,$(OBJ_EXT), $(HASH_SOURCES))
 	$(RM) $(subst .c,$(OBJ_EXT), $(HASH_SOURCES))
 
-PQCgenKAT_sign: PQCgenKAT_sign.c $(DET_SOURCES) $(DET_HEADERS)
-	$(CC) $(CFLAGS) -o $@ $(DET_SOURCES) $< -lcrypto
+PQCgenKAT_$(VARIANT)-sign$(EXESUFX): PQCgenKAT_sign.c $(DET_SOURCES) $(DET_HEADERS)
+	$(CC) $(filter-out -c, $(CFLAGS)) -o $@ $(DET_SOURCES) $< $(LIBS)
 
-test/benchmark: test/benchmark.c test/cycles.c $(SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) -o $@ test/cycles.c $(SOURCES) $< $(LDLIBS)
+test/benchmark$(EXESUFX): test/benchmark.c test/cycles.c $(SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) -o $@ test/cycles.c $(SOURCES) $< $(LIBS)
 
 test/%: test/%.c $(SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) $< $(LIBS)
 
-test/haraka: test/haraka.c $(filter-out haraka.c,$(SOURCES)) $(HEADERS)
-	$(CC) $(CFLAGS) -o $@ $(filter-out haraka.c,$(SOURCES)) $< $(LDLIBS)
+test/haraka$(EXESUFX): test/haraka.c $(filter-out haraka.c,$(SOURCES)) $(HEADERS)
+	$(CC) $(CFLAGS) -o $@ $(filter-out haraka.c,$(SOURCES)) $< $(LIBS)
 
 test/%.exec: test/%
 	@$<
@@ -94,6 +100,7 @@ test/%.exec: test/%
 clean:
 	-$(RM) $(TESTS)
 	-$(RM) $(BENCHMARK)
-	-$(RM) PQCgenKAT_sign
+	-$(RM) PQCgenKAT_$(VARIANT)-sign$(EXESUFX)
+	-$(RM) *.o *.obj
 	-$(RM) PQCsignKAT_*.rsp
 	-$(RM) PQCsignKAT_*.req

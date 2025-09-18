@@ -435,7 +435,7 @@ TRNG_TYPE GetDefaultTrng()
       if (TRNG_FIPS != global_trng_type) {
         if (ALT4_Avail()) {
           MARK("Found, switching to TRNG_HW", "");
-    global_trng_type = TRNG_HW;
+          global_trng_type = TRNG_HW;
         } else {
           MARK("TRNG_HW not available, remaining with", TRNG_ARRAY[global_trng_type].name);  
         }
@@ -444,8 +444,8 @@ TRNG_TYPE GetDefaultTrng()
       }
     } else {
       MARK("User TRNG set, remaining with", TRNG_ARRAY[global_trng_type].name);
-  }
-  global_trng_type_attempted_upgrade = 1;
+    }
+    global_trng_type_attempted_upgrade = 1;
   }
 
 #else /*x86_64, power */

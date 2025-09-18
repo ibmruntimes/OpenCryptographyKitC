@@ -21,12 +21,9 @@ $(GSK_LIBNAME): $(GSK_SDK) $(GSK_DIR) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 ifneq ($(strip $(MUPPET)),)
 # ar x not working on AIX64 for some reason
 # will need to link $(MUPPET) in icctest_s
-#OLD_ICC_OBJ=icc$(OBJSUFX)
-#OLD_ICC_OBJ_AR=$(AR) t $(MUPPET) ; $(AR) x $(MUPPET) $(OLD_ICC_OBJ)
-#OLD_ICC_OBJ_CLEAN=$(RM) $(OLD_ICC_OBJ)
-OLD_ICC_OBJ=
-OLD_ICC_OBJ_AR=
-OLD_ICC_OBJ_CLEAN=
+OLD_ICC_OBJ=icc$(OBJSUFX)
+OLD_ICC_OBJ_AR=$(AR) t $(MUPPET) ; $(AR) -X64 -x $(MUPPET)
+OLD_ICC_OBJ_CLEAN=$(RM) $(OLD_ICC_OBJ)
 endif
 
 # Static lib

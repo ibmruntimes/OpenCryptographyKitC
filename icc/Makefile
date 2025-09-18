@@ -1,4 +1,11 @@
 #******************************************************************************
+#
+# Copyright IBM Corp. 2023
+#
+# Licensed under the Apache License 2.0 (the "License"). You may not use
+# this file except in compliance with the License. You can obtain a copy
+# in the file LICENSE in the source distribution.
+# 
 #******************************************************************************
 
 #- Default targets, before the makefile stubs below (some of which
@@ -8,6 +15,9 @@ default: help
 
 # Makefile needs to define this as relative path from Makefile's dir to the base of ICC source dir
 ICC_ROOT=..
+
+HOSTNAME=$(shell hostname)
+$(warning HOSTNAME=$(HOSTNAME))
 
 # This is the version tag inserted into the ICC shared library names
 # This exists to allow us to have both a certified and non-certified ICC in
@@ -138,17 +148,17 @@ $(OPSYS)_ARGON = $(argon2_obj)
 ARGON = $($(OPSYS)_ARGON)
 
 help:
-	echo make targets:
-	echo    create_all - clean_all - scrubbed, create_all_no_legacy, create_all_FIPS
-	echo         e.g: make -C icc OPSYS=WIN64_VS2022 CONFIG=debug create_all
-	echo         PQC=NONE, PQC=LIBOQS, PQC= (default LIBDKS)
-	echo    set_icc_version
-	echo         e.g: 'make ... ICC_VERSION_VER=x ICC_VERSION_REL=y ICC_VERSION_MOD=z set_icc_version' to get "x.y.z" as version number
-	echo    build_all
-	echo    create_pqc, build_pqc, clean_pqc
-	echo    backup_libdks
-	echo         tars up libdks which can be checked in to avoid git clones
-	echo    show_config, show_version_info
+	@echo make targets:
+	@echo "   create_all - clean_all - scrubbed, create_all_no_legacy, create_all_FIPS"
+	@echo "        e.g: make -C icc OPSYS=WIN64_VS2022 CONFIG=debug create_all"
+	@echo "        PQC=NONE, PQC=LIBOQS, PQC= (default LIBDKS)"
+	@echo    set_icc_version
+	@echo         e.g: 'make ... ICC_VERSION_VER=x ICC_VERSION_REL=y ICC_VERSION_MOD=z set_icc_version' to get "x.y.z" as version number
+	@echo    build_all
+	@echo    create_pqc, build_pqc, clean_pqc
+	@echo    backup_libdks
+	@echo         tars up libdks which can be checked in to avoid git clones
+	@echo    show_config, show_version_info
 
 # Fix a problem only on z/OS, the two stub loaders created from icc.c need to have 
 # different object names on this platform
@@ -230,7 +240,7 @@ create_openssl: $(ICC_ROOT)/openssl_source/$(OPENSSL_VER)-icc.tar.gz
 	)
 # test if the extract worked
 	cd $(ICC_ROOT)/$(OPENSSL_VER)
-	-rm Build_OSSL_Complete
+	if [ -e Build_OSSL_Complete ] ; then rm Build_OSSL_Complete ; fi
 
 #- Create the OpenSSL sources from tarfile and patches on zOS
 #- This has NO automated dependencies as that messes the automated builds
@@ -294,7 +304,7 @@ tar_libArgon:
 	cd libArgon ; tar czf $(ICC_ROOT)/libArgon.tar.gz phc-winner-argon2
 
 #Build_Argon: create_libArgon $(ICC_ROOT)/libArgon/phc-winner-argon2/Makefile
-#	$(MAKE) -C $(ICC_ROOT)/libArgon/phc-winner-argon2/ $(DKS_MAKE_FLAGS) libs
+#	"$(MAKE)" -C $(ICC_ROOT)/libArgon/phc-winner-argon2/ $(DKS_MAKE_FLAGS) libs
 
 
 ### Dilithium Kyber Sphincs
@@ -358,29 +368,41 @@ $(ICC_ROOT)/libdks/kyber $(ICC_ROOT)/libdks/dilithium $(ICC_ROOT)/libdks/sphincs
 
 # nistkat needs to link to openssl so only build it for 64 bit linux
 AMD64_LINUX_PQCKAT=nistkat tests
+# Sphincs KAT only compiles on linux
+AMD64_LINUX_PQCKAT_SPHINCS=$(AMD64_LINUX_PQCKAT)
 # the nistkat test is crashing in 32 bit linux. Some linking problem
 LINUX_PQCKAT=nistkat
 WIN64_VS2022_PQCKAT=nistkat tests
 AIX64_PQCKAT=nistkat tests
 PQCKAT=$($(OPSYS)_PQCKAT)
+PQCKAT_SPHINCS=$($(OPSYS)_PQCKAT_SPHINCS)
+
+.PHONY: create_dks build_dks_k build_dks_d build_dks_s build_dks
+
+build_dks_k: $(ICC_ROOT)/libdks/kyber/ref/Makefile
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/kyber/ref $(DKS_MAKE_FLAGS) static $(PQCKAT)
+
+build_dks_d: $(ICC_ROOT)/libdks/dilithium/ref/Makefile
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/dilithium/ref $(DKS_MAKE_FLAGS) static $(PQCKAT)
+
+build_dks_s: $(ICC_ROOT)/libdks/sphincs/ref/Makefile $(ICC_ROOT)/libdks/sphincs/ref/api.h
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-128s static $(PQCKAT_SPHINCS)
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-128f static
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-192s static
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-192f static
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-256s static
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-256f static
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-128s static
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-128f static
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-192s static
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-192f static
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-256s static
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-256f static
 
 # the build (make) should always run
-build_dks: create_dks $(ICC_ROOT)/libdks/defs.mk $(ICC_ROOT)/libdks/kyber/ref/Makefile $(ICC_ROOT)/libdks/dilithium/ref/Makefile \
-		$(ICC_ROOT)/libdks/sphincs/ref/Makefile $(ICC_ROOT)/libdks/sphincs/ref/api.h
-	$(MAKE) -C $(ICC_ROOT)/libdks/kyber/ref $(DKS_MAKE_FLAGS) static $(PQCKAT)
-	$(MAKE) -C $(ICC_ROOT)/libdks/dilithium/ref $(DKS_MAKE_FLAGS) static $(PQCKAT)
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-128s static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-128f static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-192s static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-192f static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-256s static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-256f static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-128s static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-128f static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-192s static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-192f static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-256s static
-	$(MAKE) -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-256f static
+build_dks: create_dks $(ICC_ROOT)/libdks/defs.mk \
+		build_dks_k build_dks_d build_dks_s
+	@echo $@ built
 
 # update from our Makefile patches
 $(ICC_ROOT)/libdks/defs.mk: $(ICC_ROOT)/libdks_icc/defs.mk
@@ -472,18 +494,19 @@ build_oqs: $(ICC_ROOT)/liboqs/CMakeCache.txt
 
 # our local liboqs integration and test code
 #icc_oqs: build_oqs
-#	$(MAKE) -C $(ICC_ROOT)/iccpkg/liboqs all
+#	"$(MAKE)" -C $(ICC_ROOT)/iccpkg/liboqs all
 
 create_pqc: $(PQC_CREATE)
-	echo "create: configured for: $(PQC_CREATE)"
+	@echo "create: configured for: $(PQC_CREATE)"
 build_pqc: $(PQC_TARGET)
-	echo "build: configured for: $(PQC_TARGET)"
+	@echo "build: configured for: $(PQC_TARGET)"
 clean_pqc: clean_oqs clean_dks
-	echo "clean: configured for: $(PQC_CREATE)"
-	-$(MAKE) -C $(ICC_ROOT)/iccpkg/pqc clean
+	@echo "clean: configured for: $(PQC_CREATE)"
+	"$(MAKE)" -C $(ICC_ROOT)/iccpkg/pqc clean
 
-$(PACKAGE_DIR):
-	$(MKDIR) $@
+# made in gsk_crypto.mk
+#$(PACKAGE_DIR):
+#	$(MKDIR) $@
 
 $(SDK_DIR): $(PACKAGE_DIR)
 	$(MKDIR) $@
@@ -521,10 +544,10 @@ iccVdump$(EXESUFX): iccVdump.c buildinfo.h
 # So a pre-built binary may not run on the target build machine.
 # So we dont depend on iccVdump binary but we force the build if we actually need it - then delete it.
 ICC_ver.txt: buildinfo.h
-	$(MAKE) clean_iccVdump
-	$(MAKE) iccVdump$(EXESUFX)
+	"$(MAKE)" clean_iccVdump
+	"$(MAKE)" iccVdump$(EXESUFX)
 	./iccVdump$(EXESUFX) >ICC_ver.txt
-	$(MAKE) clean_iccVdump
+	"$(MAKE)" clean_iccVdump
 
 exports:
 	$(MKDIR) $@
@@ -540,7 +563,7 @@ ICCencapsulator.class: ICCencapsulator.java
 	javac ICCencapsulator.java
 
 # the create_all_* needs to be ran manually
-icc_a.h icc_a.c icclib_a.h icclib_a.c:
+icc_a.h icc_a.c icclib_a.h icclib_a.c: functions.txt
 	echo please make create_all
 	false
 
@@ -576,19 +599,19 @@ create_icc_FIPS:
 	sed -i 's/^# non-FIPS;$$/# FIPS;/' functions.txt
 	sed -i 's/^PREFIX=N;$$/PREFIX=C;/' functions.txt
 	sed -i 's/VTAG=085$$/VTAG=084/' VTAG.mk
-	echo 'FIPS ICC builds have convention of even number release, E.g. 8.8.1, non-FIPS 8.9.1'
+	@echo 'FIPS ICC builds have convention of even number release, E.g. 8.8.1, non-FIPS 8.9.1'
 	cat icc_curr_version
 
 # needs 'make ... ICC_VERSION_VER=x ICC_VERSION_REL=y ICC_VERSION_MOD=z set_icc_version' to get "x.y.z" as version number
 set_icc_version: buildinfo.h
-	echo 'ICC_VERSION_VER.ICC_VERSION_REL.ICC_VERSION_MOD=$(ICC_VERSION_VER).$(ICC_VERSION_REL).$(ICC_VERSION_MOD)'
+	@echo 'ICC_VERSION_VER.ICC_VERSION_REL.ICC_VERSION_MOD=$(ICC_VERSION_VER).$(ICC_VERSION_REL).$(ICC_VERSION_MOD)'
 	if [ ! -e iccversion.h.bak ] ; then cp iccversion.h iccversion.h.bak ; fi
-	sed -i 's/ICC_VERSION_REL .$$/ICC_VERSION_REL $(ICC_VERSION_REL)/' iccversion.h
-	sed -i 's/ICC_VERSION_MOD .$$/ICC_VERSION_MOD $(ICC_VERSION_MOD)/' iccversion.h
+	sed -i 's/define ICC_VERSION_REL ..*$$/define ICC_VERSION_REL $(ICC_VERSION_REL)/' iccversion.h
+	sed -i 's/define ICC_VERSION_MOD ..*$$/define ICC_VERSION_MOD $(ICC_VERSION_MOD)/' iccversion.h
 	if [ ! -e icc_minor_version.h.bak ] ; then cp icc_minor_version.h icc_minor_version.h.bak ; fi
-	sed -i 's/ICC_VERSION_MOD .$$/ICC_VERSION_MOD $(ICC_VERSION_MOD)/' icc_minor_version.h
+	sed -i 's/define ICC_VERSION_MOD ..*$$/define ICC_VERSION_MOD $(ICC_VERSION_MOD)/' icc_minor_version.h
 	if [ ! -e buildinfo.h.bak ] ; then cp buildinfo.h buildinfo.h.bak ; fi
-	sed -i 's/ICC_VERSION_MOD .$$/ICC_VERSION_MOD $(ICC_VERSION_MOD)/' buildinfo.h
+	sed -i 's/define ICC_VERSION_MOD ..*$$/define ICC_VERSION_MOD $(ICC_VERSION_MOD)/' buildinfo.h
 	sed -i 's/8.9/$(ICC_VERSION_VER).$(ICC_VERSION_REL)/' buildinfo.h
 	if [ ! -e icc_curr_version.bak ] ; then cp icc_curr_version icc_curr_version.bak ; fi
 	echo '$(ICC_VERSION_VER).$(ICC_VERSION_REL).$(ICC_VERSION_MOD)' > icc_curr_version
@@ -621,16 +644,23 @@ show_version_info: buildinfo.h ICC_ver.txt
 	echo IS_FIPS=$(IS_FIPS)
 	-ls create*.0
 
+# defaults
+ICC_VERSION_VER=8
+ICC_VERSION_REL=9
+ICC_VERSION_MOD=0
 #
 # Just an annoyance during dev. builds. It's fine if it's empty. Typically a dev build.
 # buildinfo.h is normally written by the build system at extract time.
 # Note: buildinfo.h is only included (in iccversion.h) if ICC_OFFICIAL_BUILD is defined in CFLAGS,
 # or make ... BUILD=OFFICIAL ...
 #
-ifeq ($(strip $(ICC_VERSION_MOD)),)
-ICC_VERSION_MOD = 0
-endif
-
+ifeq ($(findstring OFFICIAL, $(BUILD)), OFFICIAL)
+# probably bad extract or prebuild failed
+buildinfo.h:
+	echo official build error detected
+	false
+else
+# create one for developer builds
 buildinfo.h:
 	touch $@
 	echo '#define ICC_PRODUCT_NAME "icc_$(ICC_VERSION_VER).$(ICC_VERSION_REL)"' >> $@
@@ -643,6 +673,7 @@ buildinfo.h:
 	echo '#define ICC_GIT_HASH ""' >> $@
 	echo '#define OCKC_GIT_BRANCH ""' >> $@
 	echo '#define OCKC_GIT_HASH ""' >> $@
+endif
 
 #- Run BVT
 
@@ -675,7 +706,7 @@ icctest_openssl:
 
 iccpkg_tests: $(ICCPKG_TEST)
 	unset MAKEOVERRIDES MAKELEVEL MAKEFILES; \
-	$(MAKE) -C $(ICC_ROOT)/iccpkg tests
+	"$(MAKE)" -C $(ICC_ROOT)/iccpkg tests
 	@echo $@ complete
 
 # not FIPS:
@@ -709,18 +740,18 @@ build_all: gsk_wrap Build_OSSL_Complete SDK_TARGETS ICCPKG_SDK_HEADERS $(PQC_TAR
 # Build the performance test code for ICC
 $(ICC_PERF): $(ICCLIB_SDK)
 	unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
-	$(MAKE) -C $(ICC_ROOT)/iccspeed icc;
+	"$(MAKE)" -C $(ICC_ROOT)/iccspeed icc;
 	$(CP) $(ICC_ROOT)/iccspeed/bin/$(OPSYS)/icc_thread$(EXESUFX) $(ICC_PERF)
 
 icc_test:
 	if [ -d $(ICC_ROOT)/icc_test/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
-		$(MAKE) -C $(ICC_ROOT)/icc_test all ; \
+		"$(MAKE)" -C $(ICC_ROOT)/icc_test all ; \
 	fi
 
 $(ICCPKG_TEST): $(ICCLIB_SDK) PKCS11
 	unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
-	$(MAKE) -C $(ICC_ROOT)/iccpkg all
+	"$(MAKE)" -C $(ICC_ROOT)/iccpkg all
 
 # note from icc_defs.mk
 # ..._EXTRAS         = PKCS11 PKCS11_PERF
@@ -731,7 +762,7 @@ $(ICCPKG_TEST): $(ICCLIB_SDK) PKCS11
 PKCS11_PERF: $(ICCLIB_SDK) PKCS11
 	if [ -d $(ICC_ROOT)/pkcs11/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
-		$(MAKE) -C $(ICC_ROOT)/iccspeed pkcs11 ; \
+		"$(MAKE)" -C $(ICC_ROOT)/iccspeed pkcs11 ; \
 		$(CP) $(ICC_ROOT)/iccspeed/bin/$(OPSYS)/pkcs11_thread$(EXESUFX) $(SDK_DIR)/ ; \
    	fi
 
@@ -749,7 +780,7 @@ create_pkcs11: $(ICC_ROOT)/pkcs11
 PKCS11: $(ICCLIB_SDK)
 	if [ -d $(ICC_ROOT)/pkcs11/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
-		$(MAKE) -C $(ICC_ROOT)/pk11/ all ; \
+		"$(MAKE)" -C $(ICC_ROOT)/pk11/ all ; \
 	fi;
 
 
@@ -771,7 +802,7 @@ clean_openssl:
 	-$(CLEAN_OSSL)
 	-$(RM) tmp/tmp/*
 	-$(RM) tmp/*$(OBJSUFX) tmp/dummyfile
-	-$(RM) Build_OSSL_Complete
+	if [ -e Build_OSSL_Complete ] ; then rm Build_OSSL_Complete ; fi
 
 
 #- Clean just ICC
@@ -798,7 +829,7 @@ clean_icc:
 clean_icc_test:
 	if [ -d $(ICC_ROOT)/icc_test/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
-		$(MAKE) -C $(ICC_ROOT)/icc_test clean ; \
+		"$(MAKE)" -C $(ICC_ROOT)/icc_test clean ; \
 	fi
 
 # tools has no Makefile
@@ -808,19 +839,19 @@ clean_tools:
 clean_perf:
 	if [ -d $(ICC_ROOT)/iccspeed/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
-		$(MAKE) -C $(ICC_ROOT)/iccspeed clean ; \
+		"$(MAKE)" -C $(ICC_ROOT)/iccspeed clean ; \
 	fi
 
 clean_pkcs11:
 	if [ -d $(ICC_ROOT)/pk11/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
-		$(MAKE) -C $(ICC_ROOT)/pk11 clean ; \
+		"$(MAKE)" -C $(ICC_ROOT)/pk11 clean ; \
 	fi
 
 clean_iccpkg:
 	if [ -d $(ICC_ROOT)/iccpkg/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
-		$(MAKE) -C $(ICC_ROOT)/iccpkg clean ; \
+		"$(MAKE)" -C $(ICC_ROOT)/iccpkg clean ; \
 	fi
 
 #- Clean out everything including the autogenerated files
@@ -914,7 +945,10 @@ tmp/tmp/dummyfile:  Build_OSSL_Complete tmp/dummyfile
 # this is target for icclib085 shared library (icclib084 if FIPS)
 # the target for the step library is in iccpkg/platforms/*
 
-$(ICCDLL_NAME): Makefile $(PQC_TARGET) privkey.rsa icclib$(OBJSUFX) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) tmp/tmp/dummyfile signer$(EXESUFX) tracer.h extsig.h $(GSK_SDK) $(ICC_RTE_DIR) $(NOSHIP_ICC_RTE_DIR) $(ARGON)
+$(GSK_SDK)/unstripped : $(GSK_SDK)
+	$(MKDIR) $@
+
+$(ICCDLL_NAME): Makefile $(PQC_TARGET) privkey.rsa icclib$(OBJSUFX) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) tmp/tmp/dummyfile signer$(EXESUFX) $(GSK_SDK)/unstripped $(ICC_RTE_DIR) $(NOSHIP_ICC_RTE_DIR) $(ARGON)
 	$(SLD) $(SLDFLAGS) $(ICCLIB_LNK) $(EXPORT_FLAG)$(ICCLIB_EXPFILE)  icclib$(OBJSUFX) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) \
 		$(ARGON) tmp/tmp/*$(OBJSUFX) $(LDLIBS) $(PQCLIBS)
 #- Unstripped goes into NOSHIP and sdk
@@ -925,7 +959,8 @@ ifeq ($(findstring WIN, $(OPSYS)), WIN)
 	$(CP) $@ $(GSK_SDK)/
 else
 	$(CP) $@ $(NOSHIP_ICC_RTE_DIR)/$@.unstripped
-	$(CP) $@ $(GSK_SDK)/$@.unstripped
+	$(CP) $@ $(GSK_SDK)/unstripped
+	$(CP) ICCSIG.txt $(GSK_SDK)/unstripped
 	$(STRIP) $@
 endif
 #- Regular lib
@@ -1180,7 +1215,7 @@ $(MYICC)$(OBJSUFX): $(MYICC).c icc_a.c icc.h icc_a.h platform.h iccversion.h
 	$(CC) $(CFLAGS) $(SDKFLAGS) -I./ -I$(OSSLINC_DIR) -I$(OSSL_DIR) $(MYICC).c $(OUT)$@
 
 # Notes:
-# ICCLIB is the ICC module static library
+# ICCLIB is the ICC module static library (defined locally)
 # This icctest is different from iccpkg/icctest which links to the step library
 # icc_test/Makefile looks for ICCTEST_BUILT as a pre-req to running tests
 

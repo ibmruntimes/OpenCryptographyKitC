@@ -8,7 +8,7 @@
 
 /*************************************************************************
 // Description: Manually created source for the ICCPKG wrapper for GSkit
-// 
+//
 *************************************************************************/
 
 #if !defined(LOADED_H)
@@ -72,12 +72,12 @@
 #define MAKE_FN_NAME(x,y) MAKE_FN_NAME2(MAKE_FN_NAME2(MAKE_FN_NAME2(MAKE_FN_NAME2(MAKE_FN_NAME2(MAKE_FN_NAME2(x,y),ICC_VERSION_VER),_),ICC_VERSION_REL),_),ICC_VERSION_MOD)
 #define FUNCTION_NAME(x,y) MAKE_FN_NAME(x,y)
 
-int FUNCTION_NAME(MYNAME,_path)(char *returned_path,int path_len);
+static int FUNCTION_NAME(MYNAME,_path)(char *returned_path,int path_len);
 
 static char *FUNCTION_NAME(MYNAME,_loaded_from)();
 
 #if defined(_WIN32)
-int FUNCTION_NAME(MYNAME,_pathW)(wchar_t *returned_path,int path_len);
+static int FUNCTION_NAME(MYNAME,_pathW)(wchar_t *returned_path,int path_len);
 
 static wchar_t *FUNCTION_NAME(MYNAME,_loaded_fromW)();
 #endif /* _WIN32 */

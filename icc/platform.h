@@ -32,7 +32,7 @@ extern "C" {
 
 #if !defined VTAG
 #pragma message("VTAG not defined")
-#define VTAG 0
+#define VTAG 085
 #endif
 
   /* 

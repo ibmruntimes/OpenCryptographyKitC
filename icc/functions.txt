@@ -13,9 +13,9 @@
 #;
 #;
 #;
-#Comments start with an # and end with an ;
-#In fact, all statements must end with an ;
-# AND NO TABS ;
+# Comments start with an # and end with an ;
+# In fact, all statements must end with an ;
+# And no tabs ;
 #;
 # Namespacing;
 #;
@@ -2119,16 +2119,16 @@ OPENSSLPREFIX=;
 #! @note All the aad wanted must be supplied before any data is supplied, but both aad and data can;
 #! be supplied in segments;
 
-0abcdE int AES_GCM_EncryptUpdate(AES_GCM_CTX *aes_gcm_ctx,unsigned char *aad, unsigned long aadlen,unsigned char *data,unsigned long datalen,unsigned char *out, unsigned long *outlen);
+0abcdE int AES_GCM_EncryptUpdate(AES_GCM_CTX *aes_gcm_ctx,const unsigned char *aad, unsigned long aadlen, const unsigned char *data, unsigned long datalen, unsigned char *out, unsigned long *outlen);
 
 #;
-#! @brief Update phase of a AES_GCM encrypt operation;
+#! @brief Update phase of a AES_GCM Decrypt operation;
 #! @param aes_gcm_ctx a pointer to a AES_GCM_CTX;
 #! @param aad a pointer to Additional Authentication Data to hash;
 #! @param aadlen the length of the aad 0 <= aadlen <= 2^56 bytes TOTAL - not per call;
-#! @param data a pointer to the data to encrypt and hash ;
+#! @param data a pointer to the ciphertext data to decrypt and authenticate ;
 #! @param datalen the length of the data 0 <= datalen <= 2^56 bytes TOTAL - not per call ;  
-#! @param out a pointer to a place to hold up to one block of residual data from the previous update ;
+#! @param out a pointer to a buffer to receive decrypted plaintext. May contain up to one block of residual data from the previous update ;
 #! @param outlen a place to store the length of any returned data ;
 #! @return ICC_OSSL_SUCCESS on success, ICC_FAILURE on failure;
 #! @note blocked/aligned data will be more efficient, but this will;
@@ -2136,7 +2136,7 @@ OPENSSLPREFIX=;
 #! @note All the aad wanted must be supplied before any data is supplied, but both aad and data can;
 #! be supplied in segments;
 
-0abcdE int AES_GCM_DecryptUpdate(AES_GCM_CTX *aes_gcm_ctx,unsigned char *aad, unsigned long aadlen,unsigned char *data,unsigned long datalen,unsigned char *out, unsigned long *outlen);
+0abcdE int AES_GCM_DecryptUpdate(AES_GCM_CTX *aes_gcm_ctx, const unsigned char *aad, unsigned long aadlen, const unsigned char *data, unsigned long datalen, unsigned char *out, unsigned long *outlen);
 
 #;
 #! @brief Finish a AES_GCM encrypt operation and return any remaining ciphertext and the auth tag;
@@ -2216,7 +2216,7 @@ OPENSSLPREFIX=;
 #!  @note AES_CCM is (by specification and design) a one shot algorithm;
 #!  you have to feed everything into this one call;
 
-0abcdEP int AES_CCM_Encrypt(unsigned char *nonce,unsigned int nlen, unsigned char *key,unsigned int keylen,unsigned char *aad, unsigned long aadlen,unsigned char *data,unsigned long datalen,unsigned char *out, unsigned long *outlen,unsigned int taglen);
+0abcdEP int AES_CCM_Encrypt(const unsigned char *nonce,unsigned int nlen, const unsigned char *key,unsigned int keylen,const unsigned char *aad, unsigned long aadlen,const unsigned char *data,unsigned long datalen,unsigned char *out, unsigned long *outlen,unsigned int taglen);
 
 #;
 #! @brief Perform an AES CCM Decrypt operation,;
@@ -2246,7 +2246,7 @@ OPENSSLPREFIX=;
 #! @note datalen in this call INCLUDES the length of the tag generated ;
 #! by the corresponding Encrypt call;
 
-0abcdEP int AES_CCM_Decrypt(unsigned char *nonce,unsigned int nlen,unsigned char *key, unsigned int keylen, unsigned char *aad, unsigned long aadlen, unsigned char *data, unsigned long datalen, unsigned char *out, unsigned long *outlen, unsigned int taglen);
+0abcdEP int AES_CCM_Decrypt(const unsigned char *nonce,unsigned int nlen,const unsigned char *key, unsigned int keylen, const unsigned char *aad, unsigned long aadlen, const unsigned char *data, unsigned long datalen, unsigned char *out, unsigned long *outlen, unsigned int taglen);
 
 #;
 #! @brief Get an ICC RNG handle;

@@ -38,7 +38,8 @@ endif
 
 # Expliticly set for if platform specific flag modifications are needed
 # linux64 needs c99 for nistkat/*.c on phelix
-AMD64_LINUX_CFLAGS := -std=gnu99 $(filter-out -Wpedantic -Wvla -m32,$(LINUX_CFLAGS))
+# linux64 needs -O3 on CONFIG=debug builds or KAT times out
+AMD64_LINUX_CFLAGS := -std=gnu99 -O3 $(filter-out -O0 -std=gnu99 -Wpedantic -Wvla -m32,$(LINUX_CFLAGS)) 
 LINUX_CFLAGS := -std=gnu99 -m32 $(filter-out -Wpedantic -Wvla -Wno-unused-result -m32,$(LINUX_CFLAGS))
 PPC64_LINUX_CFLAGS := -m64 $(filter-out -Wpedantic -Wvla -z noexecstack -m32,$(LINUX_CFLAGS))
 S390X_LINUX_CFLAGS := -std=c99 $(filter-out -Wpedantic -Wvla -m32,$(LINUX_CFLAGS))

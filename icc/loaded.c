@@ -1,5 +1,5 @@
 /*************************************************************************
-// Copyright IBM Corp. 2023
+// Copyright IBM Corp. 2025
 //
 // Licensed under the Apache License 2.0 (the "License"). You may not use
 // this file except in compliance with the License. You can obtain a copy
@@ -14,6 +14,8 @@
 #include "loaded.h"
 #include "tracer.h"
 
+/* module: -D MYNAME=icclib$(VTAG) */
+/* step: -D MYNAME=gskiccs8 */
 
 #if !defined(LIBNAME)
 #define LIBNAME ICCDLL_NAME
@@ -41,6 +43,7 @@
   @param path_len The maximum allowed path (sizeof(returned_len) -1)
   @return The path length, -1 if invalid input, or 0 on fail. 
 */
+static
 int FUNCTION_NAME(MYNAME,_path)(char *returned_path,int path_len)
 {
 
@@ -97,6 +100,7 @@ int FUNCTION_NAME(MYNAME,_path)(char *returned_path,int path_len)
 #if defined(_WIN32)
 
 
+static
 int FUNCTION_NAME(MYNAME,_pathW)(wchar_t *returned_path,int path_len)
 {
 
@@ -150,63 +154,81 @@ int FUNCTION_NAME(MYNAME,_pathW)(wchar_t *returned_path,int path_len)
  */
 static char *FUNCTION_NAME(MYNAME,_loaded_from)()
 {       
-  char  *dirName = NULL;  /*this library's initial directory name */                            
-  char *result = NULL;    
-  char *path = LIBNAME;
+  char *dirName = NULL;  /*this library's initial directory name */
+  char *result = NULL;
   HMODULE  libHandle;
   IN();
-  dirName = (char *)calloc(MAX_PATH,1);
-  libHandle = GetModuleHandleA(path);
-  if (!libHandle) {
-     libHandle = GetModuleHandleA(NULL);
+  dirName = (char *)calloc(MAX_PATH, sizeof(char));
+
+  if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+          (LPCWSTR) &FUNCTION_NAME(MYNAME, _loaded_from), &libHandle) == 0)
+  {
+      char buf[256];
+      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                    NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
+                    buf, (sizeof(buf) / sizeof(char)), NULL);
+      MARK("GetModuleHandleExA ", buf);
   }
-  if(NULL != dirName) {
-    if (libHandle  &&
-      GetModuleFileNameA(libHandle,dirName, MAX_PATH-1) < MAX_PATH) {
-      MARK("dirName",dirName != NULL ? dirName : "NULL");
-      result = (char *)calloc(strlen(dirName)+1,1);
+
+  if(NULL != dirName && NULL != libHandle) {
+    int rc = GetModuleFileNameA(libHandle, dirName, MAX_PATH);
+    if (rc != 0 && rc < MAX_PATH) {
+      result = (char *)calloc(strlen(dirName), sizeof(char));
       if (NULL != result) {
-        strncpy(result, dirName,strlen(dirName));
+        strncpy(result, dirName, strlen(dirName));
       }
+    } else {
+      char buf[256];
+      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                    NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
+                    buf, (sizeof(buf) / sizeof(char)), NULL);
+      MARK("GetModuleFileNameA ", buf);
     }
     free(dirName);
   }
+  
   MARK("path",(NULL != result) ? result:"NULL");
   OUT();
-  return result;   
+  return result;
 }
 
-static wchar_t * FUNCTION_NAME(MYNAME,_loaded_fromW)()
-{       
-  wchar_t  *dirName = NULL;  /*this library's initial directory name */
-  wchar_t *result = NULL;    
-  wchar_t *path = NULL;
+static wchar_t * FUNCTION_NAME(MYNAME, _loaded_fromW)()
+{
+  wchar_t *dirName = NULL;  /*this library's initial directory name */
+  wchar_t *result = NULL;
   HMODULE  libHandle;
   IN();
-  path = (wchar_t *)calloc(MAX_PATH,sizeof(wchar_t));
-  MultiByteToWideChar(CP_ACP,0,
-                      LIBNAME,-1,
-                      path,MAX_PATH-1);
+  dirName = (wchar_t *)calloc(MAX_PATH, sizeof(wchar_t));
 
-  dirName = (wchar_t *)calloc(MAX_PATH,sizeof(wchar_t));
-  libHandle = GetModuleHandleW(path);
-  if(NULL != dirName) {
-    if (libHandle  &&
-      GetModuleFileNameW(libHandle,dirName, MAX_PATH-1) < MAX_PATH) {
-    
-      result = (wchar_t *)calloc(wcslen(dirName)+1,sizeof(wchar_t));
+  if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+          (LPCWSTR) &FUNCTION_NAME(MYNAME, _loaded_fromW), &libHandle) == 0)
+  {
+      char buf[256];
+      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                    NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
+                    buf, (sizeof(buf) / sizeof(char)), NULL);
+      MARK("GetModuleHandleEx ", buf);
+  }
+
+  if(NULL != dirName && NULL != libHandle) {
+    int rc = GetModuleFileNameW(libHandle, dirName, MAX_PATH);
+    if (rc != 0 && rc < MAX_PATH) {
+      result = (wchar_t *)calloc(wcslen(dirName), sizeof(wchar_t));
       if (NULL != result) {
-        wcsncpy(result, dirName,wcslen(dirName));
+        wcsncpy(result, dirName, wcslen(dirName));
       }
+    } else {
+      char buf[256];
+      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                    NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
+                    buf, (sizeof(buf) / sizeof(char)), NULL);
+      MARK("GetModuleFileNameW ", buf);
     }
     free(dirName);
   }
-  if(NULL != path) {
-    free(path);
-  }
- 
+
   OUT();
-  return result;   
+  return result;
 }
 
 

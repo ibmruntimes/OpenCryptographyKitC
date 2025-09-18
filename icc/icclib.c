@@ -1,10 +1,10 @@
-/*************************************************************************/
-// Copyright IBM Corp. 2023
-//
-// Licensed under the Apache License 2.0 (the "License"). You may not use
-// this file except in compliance with the License. You can obtain a copy
-// in the file LICENSE in the source distribution.
-/*************************************************************************/
+/*
+ Copyright IBM Corp. 2023
+
+ Licensed under the Apache License 2.0 (the "License"). You may not use
+ this file except in compliance with the License. You can obtain a copy
+ in the file LICENSE in the source distribution.
+*/
 
 /*************************************************************************/
 // Description: Source for the icclib shared library                         
@@ -71,6 +71,7 @@ static unsigned long global_d[10];
 #pragma warning (disable : 4100)
 #   define strdup(x) _strdup(x)
 #   define stricmp(x,y) _stricmp(x,y)
+#   define strcasecmp _strcmpi
 #endif
 
 extern int ex_loops,ex_shift;
@@ -219,7 +220,7 @@ static char *no_excluded_rngs = "";
  */
 
 
-static int FIPS_init_flag = 0;		
+static int FIPS_init_flag = 0;
 
 
 extern char * FIPS_ERROR;
@@ -435,7 +436,7 @@ static void EnvVars()
   }
   /*! \EnvVar ICC_TRNG
     - Sets the type of the TRNG used by default.
-   */
+    */
 
   
   tmp = getenv("ICC_TRNG");
@@ -989,7 +990,7 @@ int InternalIntegrityCheck(ICClib *pcb, ICC_STATUS *status, int partcheck)
   {
     rv = CheckSig(sigfile, self, rsakey, partcheck);
     /** \induced 154. Signature test, Signature test fails "unknown error"
-	       basically a crypto. failure somewhere
+       basically a crypto. failure somewhere
     */
     if (154 == icc_failure)
     {
@@ -1093,7 +1094,7 @@ int GetStatus (ICClib * pcb, ICC_STATUS * status)
 */
 
 void *lib_init (ICClib * pcb, ICC_STATUS * status, const char *iccpath,
-		const char *icclibhash, const char *cryptolibhash)
+  const char *icclibhash, const char *cryptolibhash)
 {
     /*
    * This is here only to keep agressive linkers from optimizing out our
@@ -1202,7 +1203,7 @@ static
 int SetFIPSCallback(ICClib *pcb, const CALLBACK_T* callback)
 {
     int rv = 0;
-    if((NULL != pcb) && (NULL == pcb->callback) && (pcb->flags & ICC_FIPS_FLAG)) {
+    if ((NULL != pcb) && (NULL == pcb->callback) && (pcb->flags & ICC_FIPS_FLAG)) {
         pcb->callback = callback?*callback:NULL;
         rv = 1;
     }
@@ -1215,7 +1216,7 @@ int SetTRACECallback(ICClib* pcb, const TRACE_CALLBACK_T* callback)
     int rv = 0;
     if (pcb) {
         pcb->trace_callback = callback?*callback:NULL;
-      rv = 1;
+        rv = 1;
     }
     return rv;
 }
@@ -1229,7 +1230,7 @@ int SetTRACECallback(ICClib* pcb, const TRACE_CALLBACK_T* callback)
   @return ICC_OSSL_SUCCESS or ICC_FAILURE
 */
 int SetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
-		   const void *value)
+   const void *value)
 {
   int rv = ICC_OK;
 
@@ -1237,7 +1238,7 @@ int SetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
   if (status == NULL) {
     return ICC_FAILURE;
   }
-  SetStatusOK (NULL,status);	/* Default */
+  SetStatusOK (NULL,status);   /* Default */
   /* We'll allow the memory callbacks and PRNG to be set before we've initialized anything
      as that's the only place we can do it and get consistent malloc()/free() pairing
      This isn't offically documented anywhere !.
@@ -1245,7 +1246,7 @@ int SetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
   if(NULL == pcb) {
     rv = ICC_FAILURE;
     switch(valueID) {
-    case ICC_INDUCED_FAILURE:	
+    case ICC_INDUCED_FAILURE:
       icc_failure = *(unsigned int *)value;
       rv =  ICC_OK;
       break;
@@ -1263,16 +1264,16 @@ int SetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
       break;
       default:
       SetStatusLn (pcb,status, ICC_ERROR, ICC_INVALID_STATE,
-		   (char *)"Attempted to set value while in locked state",
-		   __FILE__,__LINE__);
+         (char *)"Attempted to set value while in locked state",
+         __FILE__,__LINE__);
       return ICC_FAILURE;
       break;
     }
   }
   if (value == NULL && (valueID == ICC_FIPS_APPROVED_MODE)) {
       SetStatusLn (pcb,status, ICC_ERROR, ICC_NULL_PARAMETER,
-		   (char *)"Null parameters are not allowed for this ID",
-		   __FILE__,__LINE__);
+     (char *)"Null parameters are not allowed for this ID",
+     __FILE__,__LINE__);
       return ICC_FAILURE;
     }
   switch (valueID) {
@@ -1410,7 +1411,7 @@ int SetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
                 (char *)"The CPU capability mask must be set before POST",
                 __FILE__, __LINE__);
     break;
-    case ICC_FIPS_CALLBACK:
+  case ICC_FIPS_CALLBACK:
     if (value == NULL) {
       SetStatusLn(pcb, status, ICC_WARNING, ICC_VALUE_NOT_SET,
               (char *)"Callback cannot be NULL",
@@ -1419,13 +1420,13 @@ int SetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
     }
     
     if( 0 == SetFIPSCallback(pcb, (const CALLBACK_T *)value) ) {
-        SetStatusLn(pcb, status, ICC_WARNING, ICC_VALUE_NOT_SET,
-                (char *)"Callbacks are only valid in FIPS mode and the callback can only be set once/ICC_CTX",
-                __FILE__, __LINE__);
+      SetStatusLn(pcb, status, ICC_WARNING, ICC_VALUE_NOT_SET,
+              (char *)"Callbacks are only valid in FIPS mode and the callback can only be set once/ICC_CTX",
+              __FILE__, __LINE__);
       break;
-      }
+    }
 
-      MARK("ICC_FIPS_CALLBACK set","");
+    MARK("ICC_FIPS_CALLBACK set","");
     break;
 
   case ICC_TRACE_CALLBACK:
@@ -1467,7 +1468,7 @@ int SetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
 */
 
 int GetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
-		   void *value, int valueLength)
+     void *value, int valueLength)
 {
    size_t tmp = 0;
    int rv = ICC_OK;
@@ -1475,11 +1476,11 @@ int GetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
    if (status == NULL || pcb == NULL) {
       return ICC_FAILURE;
    }
-   SetStatusOK (pcb,status);	/* Default */
+   SetStatusOK (pcb,status);  /* Default */
    if (value == NULL) {
      SetStatusLn (pcb,status, ICC_ERROR, ICC_NULL_PARAMETER,
-		(char *)"Null parameters are not allowed",
-		  __FILE__,__LINE__);
+        (char *)"Null parameters are not allowed",
+        __FILE__,__LINE__);
       return ICC_FAILURE;
    }
    memset(value,0,valueLength);
@@ -1506,8 +1507,8 @@ int GetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
 
    if (valueLength < tmp) {
      SetStatusLn (pcb,status, ICC_ERROR, ICC_INVALID_PARAMETER,
-		  (char *)"Value does not meet the minimum size requirement",
-		  __FILE__,__LINE__);
+        (char *)"Value does not meet the minimum size requirement",
+        __FILE__,__LINE__);
      return ICC_FAILURE;
    }
    switch (valueID) {
@@ -1521,8 +1522,8 @@ int GetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
    case ICC_INSTALL_PATH:
      if (Global.iccpath[0] == '\0') {
        SetStatusLn (pcb,status, ICC_WARNING, ICC_VALUE_NOT_SET,
-		    (char *)"Value has not been initialized",
-		    __FILE__,__LINE__);
+          (char *)"Value has not been initialized",
+          __FILE__,__LINE__);
      }
 #if defined(_WIN32)
      if (Global.unicode) {
@@ -1611,12 +1612,12 @@ int GetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
      }
      if(valueLength < 17) {
        SetStatusLn (pcb,status, ICC_WARNING, ICC_INVALID_PARAMETER,
-		    (char *)"Return field must be at least 17 bytes",
-		    __FILE__,__LINE__);
+          (char *)"Return field must be at least 17 bytes",
+          __FILE__,__LINE__);
      } else {
        long long cpuid = 0;
        if( 0 != OPENSSL_cpuid(&cpuid) ) {
-	        sprintf((char *)value,"%016llx",cpuid);
+           sprintf((char *)value,"%016llx",cpuid);
        }
      }
      MARK("ICC_CPU_CAPABILITY_MASK",(value != NULL)? (char *)value:"");
@@ -1625,7 +1626,7 @@ int GetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
      *(CALLBACK_T *)value = pcb->callback;
       MARK("ICC_FIPS_CALLBACK","");
     break;
-      
+   
    case ICC_TRACE_CALLBACK:
        *(TRACE_CALLBACK_T*)value = pcb->trace_callback;
        MARK2("ICC_TRACE_CALLBACK", pcb->trace_callback?"set":"NULL");
@@ -1633,8 +1634,8 @@ int GetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
       
    default:
      SetStatusLn (pcb,status, ICC_ERROR, ICC_UNSUPPORTED_VALUE_ID,
-		  (char *)"Attempted to get an invalid value ID",
-		  __FILE__,__LINE__);
+        (char *)"Attempted to get an invalid value ID",
+        __FILE__,__LINE__);
      rv = ICC_FAILURE;
      break;
    }
@@ -1682,7 +1683,7 @@ static int iccSetUpRSAFIPS(ICC_STATUS *icc_stat)
    } 
    if( (const RSA_METHOD *)FIPS_RSA_meth != RSA_get_default_method() ) {
      SetStatusLn(NULL,icc_stat,ICC_ERROR | ICC_FATAL,ICC_LIBRARY_VERIFICATION_FAILED,
-		                  "Failed to setup the FIPS compliant RSA key generator",__FILE__,__LINE__); 
+                        "Failed to setup the FIPS compliant RSA key generator",__FILE__,__LINE__); 
      ret = ICC_FAILURE;
      MARK("Failed to setup FIPS RSA keygen","");
    }
@@ -1818,7 +1819,7 @@ int SelfTest (ICClib *pcb,ICC_STATUS * status)
 {
   int iccRC = ICC_OSSL_SUCCESS;
 
-	
+
   MARK("SelfTest","iccDoKnownAnser");
   /*! \FIPS call the known answer tests during POST */
   iccDoKnownAnswer (pcb, status);
@@ -2101,13 +2102,13 @@ int my_EVP_PKEY_encrypt(unsigned char *enc_key,unsigned char *key,int key_len,EV
 void GenerateRandomSeed(ICClib *pcb, ICC_STATUS *status,int num, unsigned char *buff) {
   if(NULL != status) {
     SetStatusOK(pcb,status);
-  }  
+  }
   if(0 == my_GenerateRandomSeed(num,buff) )
   {
     if(NULL != status) {
       SetStatusLn(pcb,status,ICC_ERROR,ICC_DISABLED,(char *)"RNG seed source failed",__FILE__,__LINE__);
-    }   
-  }	  
+    }
+  }
 }
 
 static
@@ -2332,16 +2333,16 @@ int my_RAND_bytes(unsigned char *buf,int n)
 /* included via icclib_a.c */
 static
 int my_EVP_PKEY_decrypt_new(EVP_PKEY_CTX *ctx, 
-			    unsigned char *out, size_t *outlen,
-			    const unsigned char *in, size_t inlen) {
+             unsigned char *out, size_t *outlen,
+             const unsigned char *in, size_t inlen) {
   return EVP_PKEY_decrypt(ctx,out,outlen,in,inlen);  
 }
 
 /* included via icclib_a.c */
 static
 int my_EVP_PKEY_encrypt_new(EVP_PKEY_CTX *ctx, 
-			    unsigned char *out, size_t *outlen,
-			    const unsigned char *in, size_t inlen) {
+             unsigned char *out, size_t *outlen,
+             const unsigned char *in, size_t inlen) {
   return EVP_PKEY_encrypt(ctx,out,outlen,in,inlen);  
 }
 
@@ -2898,31 +2899,45 @@ static EVP_PKEY_ASN1_METHOD sphincs256f_sha2_pkey_asn1_meth;
 static
 int pqc_pub_encode(X509_PUBKEY* pubk, const EVP_PKEY* pkey)
 {
-   unsigned char* penc = NULL;
-   unsigned char* pp = NULL;
-   int penclen;
-   ASN1_STRING* str = NULL;
-   int strtype = V_ASN1_NULL;
+   int rc = 0;
 
-   /* no parameters */
-/*
-   if (!pqc_param_encode(pkey, &str, &strtype))
+   if (!pkey)
       return 0;
-*/
-   penclen = i2d_PQCPublicKey(pkey, NULL);
-   if (penclen <= 0) {
-      ASN1_STRING_free(str);
-      return 0;
+   {
+      int penclen;
+      unsigned char* penc;
+      const PQC_EVP_PKEY* pk = (const PQC_EVP_PKEY*)pkey->pkey.ptr;
+      if (!pk)
+         return 0;
+
+      penclen = (int)pk->pkcLen; // i2d_PQCPublicKey(pkey, NULL);
+      if (penclen <= 0) {
+         return 0;
+      }
+      penc = ICC_Malloc(penclen, __FILE__, __LINE__);
+      if (!penc) {
+         return 0;
+      }
+      memcpy(penc, pk->pkc, penclen);
+
+      {
+         ASN1_STRING* param = NULL;
+         int paramtype = V_ASN1_UNDEF; // V_ASN1_NULL;
+
+         /* no parameters */
+      /*
+         if (!pqc_param_encode(pkey, &param, &paramtype))
+            return 0;
+      */
+
+         if (X509_PUBKEY_set0_param(pubk, OBJ_nid2obj(pkey->ameth->pkey_id),
+            paramtype, param, penc, penclen)) {
+            rc = 1;
+         }
+         ASN1_STRING_free(param);
+      }
    }
-   pp = penc = OPENSSL_malloc(penclen);
-   penclen = i2d_PQCPublicKey(pkey, &pp);
-   if (X509_PUBKEY_set0_param(pubk, OBJ_nid2obj(pkey->ameth->pkey_id),
-      strtype, str, penc, penclen))
-      return 1;
-
-   OPENSSL_free(penc);
-   ASN1_STRING_free(str);
-   return 0;
+   return rc;
 }
 
 static
@@ -2932,57 +2947,149 @@ int pqc_pub_decode(EVP_PKEY* pkey, X509_PUBKEY* pubkey)
    int pklen = 0;
    ASN1_OBJECT* ppkalg = NULL;
    X509_ALGOR* alg = NULL;
-
-   if (!X509_PUBKEY_get0_param(&ppkalg, &p, &pklen, &alg, pubkey))
+   if (!pkey || !pubkey) {
       return 0;
+   }
+   if (!X509_PUBKEY_get0_param(&ppkalg, &p, &pklen, &alg, pubkey)) {
+      return 0;
+   }
+   if (!pklen) {
+      return 0;
+   }
+   /*
+   if (!d2i_PQCPublicKey(pkey, &p, pklen)) return 0;
+*/
    {
-      if (!d2i_PQCPublicKey(pkey, &p, pklen)) {
-         /*      RSAerr(RSA_F_RSA_PUB_DECODE, ERR_R_RSA_LIB); */
+      PQC_EVP_PKEY* pk = pkey->pkey.ptr;
+      if (!pk) {
+         pk = new_pqc_key(pkey->type);
+         if (!pk) {
+            return 0;
+         }
+         pkey->pkey.ptr = pk;
+      }
+      if (!p) {
          return 0;
       }
+      pk->pkcLen = pklen;
+      pk->pkc = ICC_Malloc(pklen, __FILE__, __LINE__);
+      if (!pk->pkc)
+         return 0;
+      memcpy(pk->pkc, p, pklen);
    }
    return 1;
 }
 
+/*
+* Ref: https://datatracker.ietf.org/doc/html/rfc5958
+
+     OneAsymmetricKey ::= SEQUENCE {
+       version                   Version,
+       privateKeyAlgorithm       PrivateKeyAlgorithmIdentifier,
+       privateKey                PrivateKey,
+       attributes            [0] Attributes OPTIONAL,
+       ...,
+       [[2: publicKey        [1] PublicKey OPTIONAL ]],
+       ...
+     }
+
+     PrivateKey ::= OCTET STRING
+
+     PublicKey ::= BIT STRING
+
+Example:
+SEQUENCE {
+   INTEGER 0x01 (1 decimal)
+   SEQUENCE {
+      OBJECTIDENTIFIER 2.16.840.1.101.3.4.3.23
+   }
+   OCTETSTRING 4bec3d8de3cfd1d5b57b789df95347011a9c30ebb8508fb220645d8b9a3caf6adf562fb635227d83265d8d1de73bb26e8d4f29189526801a8c7efdf8a1c1a478ed2674252b655f50996b3573922dfb6d1ab5157ea68a98d05a5684fd84ec0419
+   [1] 008d4f29189526801a8c7efdf8a1c1a478ed2674252b655f50996b3573922dfb6d1ab5157ea68a98d05a5684fd84ec0419
+}
+*/
+
 static int pqc_pri_encode(PKCS8_PRIV_KEY_INFO* p8, const EVP_PKEY* pkey)
 {
-   unsigned char* penc = NULL;
-   unsigned char* pp = NULL;
-   int penclen;
-   ASN1_STRING* str = NULL;
-   int strtype = V_ASN1_NULL;
-   int version = 0;
+   int rc = 0;
 
-   /* no parameters */
-   penclen = i2d_PQCPrivateKey(pkey, NULL);
-   if (penclen <= 0) {
-      ASN1_STRING_free(str);
+   if (!pkey)
       return 0;
-   }
-   pp = penc = OPENSSL_malloc(penclen);
-   penclen = i2d_PQCPrivateKey(pkey, &pp);
-   if (PKCS8_pkey_set0(p8, OBJ_nid2obj(pkey->ameth->pkey_id), version, strtype, str, penc, penclen))
+   else
    {
-      return 1;
+      int penclen;
+      unsigned char* penc;
+      const PQC_EVP_PKEY* pk = (const PQC_EVP_PKEY*)pkey->pkey.ptr;
+      if (!pk)
+         return 0;
+
+      penclen = (int)pk->skcLen; // i2d_PQCPrivateKey(pkey, NULL);
+      if (penclen <= 0) {
+         return 0;
+      }
+      penc = ICC_Malloc(penclen, __FILE__, __LINE__);
+      if (!penc) {
+         return 0;
+      }
+      memcpy(penc, pk->skc, penclen);
+
+      /* dont know how to get a v2 with the public key also in there */
+      {
+         ASN1_STRING* param = NULL;
+         /* algorithm parameters */
+         int paramtype = V_ASN1_UNDEF; // V_ASN1_NULL;
+         /* PivateKeyInfo/OneAsymmetricKey version */
+         int version = 0; /* OneAsymmetricKey = 1 (v2) */
+         /* no algorithm parameters */
+      /*
+         if (!pqc_param_encode(pkey, &param, &paramtype))
+            return 0;
+      */
+         if (PKCS8_pkey_set0(p8, OBJ_nid2obj(pkey->ameth->pkey_id), version, paramtype, param, penc, penclen)) {
+            rc = 1;
+         }
+         ASN1_STRING_free(param);
+      }
+      //   OPENSSL_free(penc);
    }
 
-   OPENSSL_free(penc);
-   ASN1_STRING_free(str);
-   return 0;
+   return rc;
 }
 
 static int pqc_pri_decode(EVP_PKEY* pkey, const PKCS8_PRIV_KEY_INFO* p8inf)
 {
    const unsigned char* p = NULL;
    int pklen = 0;
+   /*
    const ASN1_OBJECT* ppkalg = NULL;
    const X509_ALGOR* alg = NULL;
+   */
 
-   if (!PKCS8_pkey_get0(&ppkalg, &p, &pklen, &alg, p8inf))
+   if (!PKCS8_pkey_get0(NULL /*&ppkalg*/, &p, &pklen, NULL/*&alg*/, p8inf)) {
       return 0;
-   if (!d2i_PQCPrivateKey(pkey, &p, pklen)) {
-      /*      RSAerr(RSA_F_RSA_PUB_DECODE, ERR_R_RSA_LIB); */
+   }
+   if (!pklen) {
       return 0;
+   }
+   /*
+   if (!d2i_PQCPrivateKey(pkey, &p, pklen)) return 0;
+   */
+   {
+      PQC_EVP_PKEY* pk = pkey->pkey.ptr;
+      if (!pk) {
+         pk = new_pqc_key(pkey->type);
+         if (!pk) {
+            return 0;
+         }
+         pkey->pkey.ptr = pk;
+      }
+      if (!p) {
+         return 0;
+      }
+      pk->skcLen = pklen;
+      pk->skc = ICC_Malloc(pklen, __FILE__, __LINE__);
+      if (!pk->skc)
+         return 0;
+      memcpy(pk->skc, p, pklen);
    }
    return 1;
 }
@@ -3106,7 +3213,8 @@ int i2d_PQCPublicKey(const EVP_PKEY* pkey, unsigned char** pp)
 }
 
 static
-int i2d_PQCPrivateKey(const EVP_PKEY* pkey, unsigned char** pp)
+int
+i2d_PQCPrivateKey(const EVP_PKEY* pkey, unsigned char** pp)
 {
    int len;
 
@@ -3947,6 +4055,7 @@ struct s_noid noids[] =
    {"2.16.840.1.101.3.4.3.17", "ML_DSA_44", "ML_DSA_44-Dilithium", "Dilithium_512", ICC_SIG_alg_dilithium_2, &dilithium_pkey_meth, &dilithium_pkey_asn1_meth},
    {"2.16.840.1.101.3.4.3.18", "ML_DSA_65", "ML_DSA_65-Dilithium", "Dilithium_768", ICC_SIG_alg_dilithium_3, &dilithium768_pkey_meth, &dilithium768_pkey_asn1_meth},
    {"2.16.840.1.101.3.4.3.19", "ML_DSA_87", "ML_DSA_87-Dilithium", "Dilithium_1024", ICC_SIG_alg_dilithium_5, &dilithium1024_pkey_meth, &dilithium1024_pkey_asn1_meth},
+#if 1
    {"2.16.840.1.101.3.4.3.20", "SLH_DSA_SHA2_128s", "SPHINCS_SHA2_128S", "Sphincs_sha2_128s", ICC_SIG_alg_sphincs_SHA2_128s_simple, &sphincs128s_sha2_pkey_meth, &sphincs128s_sha2_pkey_asn1_meth},
    {"2.16.840.1.101.3.4.3.21", "SLH_DSA_SHA2_128f", "SPHINCS_SHA2_128F", "Sphincs_sha2_128f", ICC_SIG_alg_sphincs_SHA2_128f_simple, &sphincs128f_sha2_pkey_meth, &sphincs128f_sha2_pkey_asn1_meth},
    {"2.16.840.1.101.3.4.3.22", "SLH_DSA_SHA2_192s", "SPHINCS_SHA2_192S", "Sphincs_sha2_192s", ICC_SIG_alg_sphincs_SHA2_192s_simple, &sphincs192s_sha2_pkey_meth, &sphincs192s_sha2_pkey_asn1_meth},
@@ -3959,6 +4068,9 @@ struct s_noid noids[] =
    {"2.16.840.1.101.3.4.3.29", "SLH_DSA_SHAKE_192f", "SPHINCS_SHAKE_192F", "Sphincs_shake_192f", ICC_SIG_alg_sphincs_SHAKE_192f_simple, &sphincs192f_shake_pkey_meth, &sphincs192f_shake_pkey_asn1_meth},
    {"2.16.840.1.101.3.4.3.30", "SLH_DSA_SHAKE_256s", "SPHINCS_SHAKE_256S", "Sphincs_shake_256s", ICC_SIG_alg_sphincs_SHAKE_256s_simple, &sphincs256s_shake_pkey_meth, &sphincs256s_shake_pkey_asn1_meth},
    {"2.16.840.1.101.3.4.3.31", "SLH_DSA_SHAKE_256f", "SPHINCS_SHAKE_256F", "Sphincs_shake_256f", ICC_SIG_alg_sphincs_SHAKE_256f_simple, &sphincs256f_shake_pkey_meth, &sphincs256f_shake_pkey_asn1_meth},
+#else
+   /* disabled while key gen issue being resolved.*/
+#endif
 #endif
    {NULL}
 };
@@ -4086,7 +4198,7 @@ int strcmpdashed(const char* a, const char* b)
 
    /* where a contains '_', b can be '_', '-' or ''*/
    for (; *a || *b; a++) {
-      if (*a == *b) {
+      if (toupper(*a) == toupper(*b)) {
          b++;
       }
       else {
@@ -4112,6 +4224,11 @@ const char* cvtalias(const char*a)
    for (ns = noids; ns->o; ns++) {
       /* explicit alias - exact match */
       if (!strcmp(ns->alias, a))
+         return ns->s;
+
+      /* Re Sphincs: Some implementations are capitalizing the final letter on the algorithm name. So, the 's' or 'f' are 'S' or 'F'.*/
+      /* case insenitive match */
+      if (!strcasecmp(ns->s, a))
          return ns->s;
 
       /* name match with optional dashes */
@@ -4334,20 +4451,21 @@ EVP_KDF_CTX* EVP_KDF_CTX_new(EVP_KDF *kdf)
 
 
 struct ICC_Argon2_params {
+    uint32_t iterations;
     uint32_t lanes;
     uint32_t threads; /* Not used in Argon2_hash explicitly but determined by lanes.*/
     uint32_t memcost;
     char* password;
     char* salt;
     char* encoded;
-	size_t pwdLen;
-	size_t saltLen;
+    size_t pwdLen;
+    size_t saltLen;
     argon2_type mode;
     argon2_version version; /* possible values ARGON2_VERSION_10, ARGON2_VERSION_13*/
 };
 typedef struct ICC_Argon2_params Argon2_params;
 
-/*scraped from openssl v3 filename: */
+/*scraped from openssl v3 filename: params.h*/
 
 ICC_OSSL_PARAM* ossl_param_construct(const char* key, unsigned int data_type,
     void* data, size_t data_size)
@@ -4410,7 +4528,10 @@ static int get_ossl_paramValues(Argon2_params* params, const ICC_OSSL_PARAM** os
     const ICC_OSSL_PARAM** pp = ossl_params;
     while ((*pp)->key != NULL) {
         const ICC_OSSL_PARAM* p = *pp;
-        if (strncmp(p->key, "lanes", sizeof("lanes")) == 0) {
+        if (strncmp(p->key, "iteration", sizeof("iteration")) == 0) {
+            params->iterations = *(uint32_t*)p->data;
+        }
+        else if (strncmp(p->key, "lanes", sizeof("lanes")) == 0) {
             params->lanes = *(uint32_t*)p->data;
         }
         else if (strncmp(p->key, "threads", sizeof("threads")) == 0) {
@@ -4421,7 +4542,7 @@ static int get_ossl_paramValues(Argon2_params* params, const ICC_OSSL_PARAM** os
         }
         else if (strncmp(p->key, "pass", sizeof("pass")) == 0) {
             params->password = (char*)p->data;
-			params->pwdLen = p->data_size;
+            params->pwdLen = p->data_size;
         }
         else if (strncmp(p->key, "salt", sizeof("salt")) == 0) {
             params->salt = (char*)p->data;
@@ -4461,12 +4582,12 @@ int EVP_KDF_derive(EVP_KDF_CTX* ctx, unsigned char* out,
         return 0;
     }
 
-    
-    size_t enclen = argon2_encodedlen(2 /*tc*/, params.memcost, params.threads, (uint32_t)params.saltLen, outlen, params.mode);
+
+    size_t enclen = argon2_encodedlen(params.iterations, params.memcost, params.threads, (uint32_t)params.saltLen, outlen, params.mode) + outlen;
 
     params.encoded = calloc(1, enclen);
 
-    result = argon2_hash(2 /*timeCost*/, params.memcost, params.lanes, params.password, params.pwdLen,
+    result = argon2_hash(params.iterations, params.memcost, params.lanes, params.password, params.pwdLen,
         params.salt, params.saltLen, out, outlen, params.encoded, enclen, params.mode, params.version);
 
     if (result == 0){
@@ -4816,12 +4937,12 @@ int my_EVP_PKEY_keygen_init(EVP_PKEY_CTX* ctx)
 static
 int my_EVP_PKEY_keygen(ICClib* pcb, EVP_PKEY_CTX* cctx, EVP_PKEY** ppkey)
 {
-  int rv = 0;
+   int rv = 0;
    int nid = 0;
-  int fips = 0; /* FIPS allowed */
+   int fips = 0; /* FIPS allowed */
    int done = 0, tries = 0, maxRetry = 100;
 
-  RAND_seed(NULL,0); /* Reseed before keygen */
+   RAND_seed(NULL, 0); /* Reseed before keygen */
    for (tries = 0; !done && tries < maxRetry; tries++) {
       rv = EVP_PKEY_keygen(cctx, ppkey);
       done = 1;
@@ -4859,72 +4980,72 @@ int my_EVP_PKEY_keygen(ICClib* pcb, EVP_PKEY_CTX* cctx, EVP_PKEY** ppkey)
       rv = 0;
    }
 
-  if ((pcb != NULL) && (pcb->flags & ICC_FIPS_FLAG))
-  {
+   if ((pcb != NULL) && (pcb->flags & ICC_FIPS_FLAG))
+   {
       int rc = 0;
       size_t siglen = 512;
       int check = 0;
 
       if ((1 == rv) && (NULL != ppkey))
-    {
+      {
          EVP_PKEY* pkey = *ppkey;
          fips = PKEY_FIPS_id(pkey, &check, &nid);
-      if (1 == check)
-      {
+         if (1 == check)
+         {
             const EVP_MD* md = NULL;
             EVP_MD_CTX* md_ctx = NULL;
-        md_ctx = EVP_MD_CTX_new();
+            md_ctx = EVP_MD_CTX_new();
             md = EVP_get_digestbyname("SHA-224");
-        if (NULL != md_ctx)
-        {
+            if (NULL != md_ctx)
+            {
                unsigned char* refsig = NULL;
-          refsig = ICC_Malloc(8192, __FILE__, __LINE__); /* Large enough for a 4K RSA signature, we won't hit this with anything larger */
-          if (NULL != refsig)
-          {
+               refsig = ICC_Malloc(8192, __FILE__, __LINE__); /* Large enough for a 4K RSA signature, we won't hit this with anything larger */
+               if (NULL != refsig)
+               {
                   static unsigned char in[32] = "01234567890abcdefghi01234567890";
                   int inlen = 20;
 
                   rc = EVP_DigestSignInit(md_ctx, &cctx, md, NULL, pkey);
-            if (1 == rc)
-            {
+                  if (1 == rc)
+                  {
                      rc = EVP_DigestSign(md_ctx, refsig, &siglen, in, inlen);
-            }
-            if (1 == rc)
-            {
+                  }
+                  if (1 == rc)
+                  {
                      rc = EVP_DigestVerifyInit(md_ctx, &cctx, md, NULL, pkey);
-            }
-            if (1 == rc)
-            {
-              rc = EVP_DigestVerify(md_ctx, refsig, siglen, in, inlen);
-            }
-            if (1 != rc)
-            {
+                  }
+                  if (1 == rc)
+                  {
+                     rc = EVP_DigestVerify(md_ctx, refsig, siglen, in, inlen);
+                  }
+                  if (1 != rc)
+                  {
                      if (NULL != pkey)
-              {
+                     {
                         EVP_PKEY_free(pkey);
                         *ppkey = NULL;
-              }
-              rv = -1;
+                     }
+                     rv = -1;
+                  }
+                  ICC_Free(refsig);
+               }
+               EVP_MD_CTX_free(md_ctx);
             }
-            ICC_Free(refsig);
-          }
-          EVP_MD_CTX_free(md_ctx);
-        }
+         }
       }
-    }
-  if(2 == check) {
-    fips = 0; /* DSA */
-  }
+      if (2 == check) {
+         fips = 0; /* DSA */
+      }
    }
    if ((NULL != pcb) && (NULL != pcb->callback) && (NULL != ppkey) && (NULL != *ppkey))
-  {
-    (*pcb->callback)("ICC_EVP_PKEY_keygen", nid, fips);
-  }
+   {
+      (*pcb->callback)("ICC_EVP_PKEY_keygen", nid, fips);
+   }
    if ((NULL != pcb) && (NULL != pcb->trace_callback))
    {
        (*pcb->trace_callback)("ICC_EVP_PKEY_keygen", __func__);
    }
-  return rv;
+   return rv;
 }
 
 
@@ -5348,9 +5469,9 @@ int my_DH_compute_key_padded(ICClib *pcb,unsigned char *key,BIGNUM *pub_key,DH *
 #define HKDF_MAXBUF 1024
 
 unsigned char *HKDF_Extract(ICClib *pcb,const EVP_MD *evp_md,
-			    const unsigned char *salt, size_t salt_len,
-			    const unsigned char *key, size_t key_len,
-			    unsigned char *prk, size_t *prk_len)
+    const unsigned char *salt, size_t salt_len,
+    const unsigned char *key, size_t key_len,
+    unsigned char *prk, size_t *prk_len)
 {
     unsigned int tmp_len = 0;
     HMAC_CTX *hmac = NULL;
@@ -5364,9 +5485,9 @@ unsigned char *HKDF_Extract(ICClib *pcb,const EVP_MD *evp_md,
 }
 
 unsigned char *HKDF_Expand(ICClib *pcb,const EVP_MD *evp_md,
-			   const unsigned char *prk, size_t prk_len,
-			   const unsigned char *info, size_t info_len,
-			   unsigned char *okm, size_t okm_len)
+   const unsigned char *prk, size_t prk_len,
+   const unsigned char *info, size_t info_len,
+   unsigned char *okm, size_t okm_len)
 {
   HMAC_CTX *hmac = NULL;
   unsigned int i;
@@ -5440,10 +5561,10 @@ err:
 }
 
 unsigned char *HKDF(ICClib *pcb,const EVP_MD *evp_md,
-			const unsigned char *salt, size_t salt_len,
-			const unsigned char *key, size_t key_len,
-			const unsigned char *info, size_t info_len,
-			unsigned char *okm, size_t okm_len)
+    const unsigned char *salt, size_t salt_len,
+    const unsigned char *key, size_t key_len,
+    const unsigned char *info, size_t info_len,
+    unsigned char *okm, size_t okm_len)
 {
   unsigned char prk[ICC_EVP_MAX_MD_SIZE];
   unsigned char *ret = NULL;
@@ -5454,7 +5575,7 @@ unsigned char *HKDF(ICClib *pcb,const EVP_MD *evp_md,
 
   ret = HKDF_Expand(pcb,evp_md, prk, prk_len, info, info_len, okm, okm_len);
   memset(prk,0,sizeof(prk));
-	 
+ 
   return ret;
 }
 /* Copied from OpenSSL-FIPS */

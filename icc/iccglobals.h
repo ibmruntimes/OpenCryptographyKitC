@@ -219,6 +219,7 @@ typedef enum {
 
 /*Param names used in OSSL_PARAMS Scraped from Openssl v3 "core_names.h"*/
 
+#define ICC_OSSL_KDF_PARAM_ITER              "iteration"
 #define ICC_OSSL_KDF_PARAM_THREADS           "threads"
 #define ICC_OSSL_KDF_PARAM_ARGON2_LANES      "lanes"
 #define ICC_OSSL_KDF_PARAM_ARGON2_MEMCOST    "memcost"
@@ -645,8 +646,8 @@ typedef enum {
   Flags passed to the SP800-38F Key wrap/unwrap function
 */
 #define ICC_KW_WRAP 1            /*!< If set key wrap, unset unwrap */ 
-#define ICC_KW_FORWARD_DECRYPT 2 /*!< If set wrap uses decrypt, if uset wrap uses encrypt. (recommend unset) */
-#define ICC_KW_PAD 4            /*!< If set we use the padded variant, if unset padded (and input data must be correctly blocked) */
+#define ICC_KW_FORWARD_DECRYPT 2 /*!< If set wrap uses decrypt, if unset wrap uses encrypt. (recommend unset) */
+#define ICC_KW_PAD 4             /*!< If set we use the padded variant, if unset padded (and input data must be correctly blocked) */
 
 typedef enum {
   SP800_38F_PARAM = 0,  /*!< Parameter error, invalid key length, invalid flags */

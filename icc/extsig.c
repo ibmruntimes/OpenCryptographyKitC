@@ -74,7 +74,6 @@ Equivalent environment variable (none)
 #include "openssl/evp.h"
 #include "openssl/rsa.h"
 
-
 #include "extsig.h"
 #include "iccversion.h"
 #   if !defined(STANDALONE)
@@ -150,7 +149,6 @@ static long HashCore(FILE *fin, long pos, EVP_MD_CTX *md_ctx,
                      const EVP_MD *md) {
   size_t len = 0;
   long amt = 0;
-  int rc = 0;
 
   if (NULL != fin) {
     if (0 == pos) {
@@ -159,10 +157,7 @@ static long HashCore(FILE *fin, long pos, EVP_MD_CTX *md_ctx,
     }
     fseek(fin, 0, SEEK_SET);
     EVP_MD_CTX_cleanup(md_ctx);
-    rc = EVP_DigestInit(md_ctx, md);
-    if (1 != rc) {
-       printf("HashCore:EVP_DigestInit failed %d\n", rc);
-    }
+    EVP_DigestInit(md_ctx, md);
     /* Work out how much to read */
     while (pos > 0) {
       amt = sizeof(fbuf);
@@ -171,14 +166,14 @@ static long HashCore(FILE *fin, long pos, EVP_MD_CTX *md_ctx,
       }
       len = fread(fbuf, 1, amt, fin);
       if (len > 0) {
+        int rc = 0;
         rc = EVP_DigestUpdate(md_ctx, fbuf, len);
-        if (1 != rc) {
-           printf("HashCore:EVP_DigestUpdate failed %d\n", rc);
+        if (rc <= 0) {
+           return -1;
         }
         pos -= (long)len;
       } else {
-         printf("HashCore:fread failed\n");
-         break;
+        break;
       }
     }
   }
@@ -210,13 +205,25 @@ static int GenHash(FILE *fin, unsigned char *hashout, long pos) {
     md = EVP_get_digestbyname("SHA256");
     if (NULL != md_ctx && NULL != md) {
       pos = HashCore(fin, pos, md_ctx, md);
-      /* printf("Unread %ld\n",pos); */
+      if (pos > 0) {
+         printf("Error: GenHash: HashCore: Unread %ld\n", pos);
+         return 0;
+      }
+      else if (pos < 0) {
+         printf("Error: GenHash: HashCore\n");
+         return 0;
+      }
       evpRC = EVP_DigestFinal(md_ctx, hashout, &signL);
       if (1 != evpRC) {
         signL = 0;
+        printf("Error: GenHash: failed: EVP_DigestFinal %d\n", evpRC);
       }
       EVP_MD_CTX_cleanup(md_ctx);
       EVP_MD_CTX_free(md_ctx);
+    }
+    else {
+       const char* x = md_ctx ? "md" : "md_ctx";
+       printf("Error: GenHash: failed: EVP_get_digestbyname %s\n", x);
     }
   }
   return (int)signL;
@@ -626,24 +633,31 @@ static int GenSig(FILE *fin, unsigned char *sigout, EVP_PKEY *key, long pos) {
     md_ctx = EVP_MD_CTX_new();
     md = EVP_get_digestbyname("SHA256");
     if (NULL != md_ctx && NULL != md) {
-      HashCore(fin, pos, md_ctx, md);
+      long unread = HashCore(fin, pos, md_ctx, md);
+      if (unread > 0) {
+         printf("Error: GenSig: HashCore: Unread %ld\n", unread);
+         return 0;
+      }
+      else if (unread < 0) {
+         printf("Error: GenSig: HashCore\n");
+         return 0;
+      }
       evpRC = EVP_SignFinal(md_ctx, sigout, &signL, key);
       if (1 != evpRC) {
-         printf("GenSig: EVP_SignFinal error %d\n", evpRC);
+         printf("failed: GenSig: EVP_SignFinal %d\n", evpRC);
          signL = 0;
       }
       EVP_MD_CTX_free(md_ctx);
     }
     else {
-       printf("GenSig: EVP error\n");
+       const char* x = md_ctx ? "md" : "md_ctx";
+       printf("failed: GenSig: EVP_get_digestbyname %s\n", x);
     }
     fseek(fin, pos, SEEK_SET);
   }
-  else {
-     printf("GenSig: fin error\n");
-  }
   return (int)signL;
 }
+
 static void usage(char *pname, char *str) {
   printf("usage:\t %s sigfile keyfile [-v(erify)] [-SELF] [-FILE file] "
          "[\"X=Y\"] ...[\"Z=K\"]\n",
@@ -701,9 +715,9 @@ int main(int argc, char *argv[]) {
   {
      int rc = 0;
      rc = OPENSSL_init_crypto(
-      OPENSSL_INIT_NO_LOAD_CONFIG | OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
-          OPENSSL_INIT_ADD_ALL_DIGESTS | OPENSSL_INIT_ADD_ALL_CIPHERS,
-      NULL);
+        OPENSSL_INIT_NO_LOAD_CONFIG | OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
+        OPENSSL_INIT_ADD_ALL_DIGESTS | OPENSSL_INIT_ADD_ALL_CIPHERS,
+        NULL);
      if (rc != 1) {
         usage("OpenSSL", "OPENSSL_init_crypto");
         exit(1);
@@ -802,7 +816,7 @@ int main(int argc, char *argv[]) {
     /* At this point, we should have everything, start pushing it out */
     fprintf(sigf, "# IBM Crypto for C.%s", EOL);
     fprintf(sigf, "# ICC Version %d.%d.%d.%d%s", ICC_VERSION_VER,
-            ICC_VERSION_REL, ICC_VERSION_MOD, ICC_VERSION_FIX, EOL);
+       ICC_VERSION_REL, ICC_VERSION_MOD, ICC_VERSION_FIX, EOL);
     fprintf(sigf,
             "#%s# Note the signed library contains a copy of cryptographic "
             "code from OpenSSL (www.openssl.org),%s",
@@ -876,13 +890,13 @@ int main(int argc, char *argv[]) {
     }
     fflush(sigf);
     fprintf(sigf, "%s#Do not edit before this line%s#", EOL, EOL);
+    fprintf(sigf, "%s# Global Settings%s", EOL, EOL);
     if (NULL != tweaks[0]) {
-      fprintf(sigf, "%s# Global Settings%s", EOL, EOL);
       for (i = 0; NULL != tweaks[i]; i++) {
         fprintf(sigf, "%s%s", tweaks[i], EOL);
       }
-      fprintf(sigf, "#%s", EOL);
     }
+    fprintf(sigf, "#%s", EOL);
   }
   fseek(sigf, 0, SEEK_SET);
   fseek(bfile, 0, SEEK_SET);
@@ -906,13 +920,9 @@ int main(int argc, char *argv[]) {
   }
 
   for (i = 0; i < MAXTWEAKS; i++) {
-    if (NULL != tweaks[i]) {
-      free(tweaks[i]);
-    } else {
-      break;
-    }
+     free(tweaks[i]);
   }
-  printf("%d config items found\n", ReadConfigItems(sigf, tweaks, 20));
+  printf("%d config items found\n", ReadConfigItems(sigf, tweaks, MAXTWEAKS));
 
   fclose(sigf);
   fclose(bfile);
@@ -923,11 +933,7 @@ int main(int argc, char *argv[]) {
   }
 
   for (i = 0; i < MAXTWEAKS; i++) {
-    if (NULL != tweaks[i]) {
-      free(tweaks[i]);
-    } else {
-      break;
-    }
+    free(tweaks[i]);
   }
   OPENSSL_cleanup();
   return 0;

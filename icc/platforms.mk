@@ -24,7 +24,7 @@ DEFAULT_CXX             = cl -TP
 DEFAULT_debug_CFLAGS   = -MDd -Zi -D DEBUG -RTCu
 # Optimization off generates faster starting code ...
 DEFAULT_release_CFLAGS = -MD -Zi
-DEFAULT_CFLAGS         = -nologo $($(OPSYS)_$(CONFIG)_CFLAGS) -W3 -GF  -GS -D WIN32 -D $(OPSYS) -D _MBCS -D_CRT_SECURE_NO_WARNINGS -c 
+DEFAULT_CFLAGS         = -nologo $($(OPSYS)_$(CONFIG)_CFLAGS) -W3 -GF -GS -D WIN32 -D $(OPSYS) -D _MBCS -D_CRT_SECURE_NO_WARNINGS -c 
 DEFAULT_CXXFLAGS       = $($(OPSYS)_CFLAGS)
 DEFAULT_LD             = link
 DEFAULT_LD_CXX         = link
@@ -36,7 +36,7 @@ DEFAULT_LDXXFLAGS      = $($(OPSYS)_LDFLAGS)
 DEFAULT_SLDFLAGS       = -dll $($(OPSYS)_LDFLAGS) 
 DEFAULT_ARFLAGS        = -lib -nologo -out:$@ 
 DEFAULT_release_LDLIBS = ws2_32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib
-DEFAULT_debug_LDLIBS = ws2_32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib
+DEFAULT_debug_LDLIBS   = ws2_32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib
 DEFAULT_LDLIBS         = -DYNAMICBASE -NXCOMPAT $($(OPSYS)_$(CONFIG)_LDLIBS)
 DEFAULT_OBJSUFX        = .obj
 DEFAULT_EXESUFX        = .exe
@@ -45,9 +45,9 @@ DEFAULT_SHLPRFX        =
 DEFAULT_SHLSUFX        = .dll
 DEFAULT_STLPRFX        = 
 DEFAULT_STLSUFX        = .lib
-DEFAULT_debug_STRIP   = touch
-DEFAULT_release_STRIP = touch
-DEFAULT_OUT           = -Fo
+DEFAULT_debug_STRIP    = touch
+DEFAULT_release_STRIP  = touch
+DEFAULT_OUT            = -Fo
 DEFAULT_CFLAGS2        = $($(OPSYS)_CFLAGS)
 DEFAULT_LDFLAGS2       = $($(OPSYS)_LDFLAGS)
 DEFAULT_SLDFLAGS2      = $($(OPSYS)_SLDFLAGS)
@@ -72,14 +72,14 @@ $(OPSYS)_CXX = $(DEFAULT_CXX)
 $(OPSYS)_debug_CFLAGS   = $(DEFAULT_debug_CFLAGS)
 $(OPSYS)_release_CFLAGS = $(DEFAULT_release_CFLAGS)
 $(OPSYS)_CFLAGS         = $(DEFAULT_CFLAGS)
-$(OPSYS)_CXXFLAGS = $($(OPSYS)_CFLAGS)
+$(OPSYS)_CXXFLAGS       = $($(OPSYS)_CFLAGS)
 $(OPSYS)_LD             = $(DEFAULT_LD)
 $(OPSYS)_LD_CXX         = $(DEFAULT_LD_CXX)
 $(OPSYS)_SLD            = $(DEFAULT_LD)
 $(OPSYS)_AR             = $(DEFAULT_AR)
 $(OPSYS)_debug_LDFLAGS  = $(DEFAULT_debug_LDFLAGS)
 $(OPSYS)_LDFLAGS        = $(DEFAULT_LDFLAGS)
-$(OPSYS)_LDXXFLAGS = $($(OPSYS)_LDFLAGS)
+$(OPSYS)_LDXXFLAGS      = $($(OPSYS)_LDFLAGS)
 $(OPSYS)_SLDFLAGS       = $(DEFAULT_SLDFLAGS)
 $(OPSYS)_ARFLAGS        = $(DEFAULT_ARFLAGS)
 $(OPSYS)_release_LDLIBS = $(DEFAULT_release_LDLIBS)
@@ -91,13 +91,13 @@ $(OPSYS)_SHLPRFX        = $(DEFAULT_SHLPRFX)
 $(OPSYS)_SHLSUFX        = $(DEFAULT_SHLSUFX)
 $(OPSYS)_STLPRFX        = $(DEFAULT_STLPRFX)
 $(OPSYS)_STLSUFX        = $(DEFAULT_STLSUFX)
-$(OPSYS)_debug_STRIP   = $(DEFAULT_debug_STRIP)
-$(OPSYS)_release_STRIP = $(DEFAULT_release_STRIP)
-$(OPSYS)_OUT           = $(DEFAULT_OUT)
+$(OPSYS)_debug_STRIP    = $(DEFAULT_debug_STRIP)
+$(OPSYS)_release_STRIP  = $(DEFAULT_release_STRIP)
+$(OPSYS)_OUT            = $(DEFAULT_OUT)
 $(OPSYS)_CFLAGS2        = $(DEFAULT_CFLAGS2)
 $(OPSYS)_LDFLAGS2       = $(DEFAULT_LDFLAGS2)
 $(OPSYS)_SLDFLAGS2      = $(DEFAULT_SLDFLAGS2)
-$(OPSYS)_MT	     = $(DEFAULT_MT)
+$(OPSYS)_MT             = $(DEFAULT_MT)
 $(OPSYS)_MUPPET         = $(DEFAULT_MUPPET)
 
 #--- VisualC++ definitions on Win32
@@ -116,7 +116,7 @@ WIN32_SLD            = $(WIN32_LD)
 WIN32_AR             = $(WIN32_LD)
 WIN32_debug_LDFLAGS  = 
 WIN32_LDFLAGS = -DYNAMICBASE -NXCOMPAT -nologo -DEBUG -out:$@
-WIN32_SLDFLAGS       = -dll  $(WIN32_LDFLAGS) 
+WIN32_SLDFLAGS       = -dll $(WIN32_LDFLAGS)
 WIN32_ARFLAGS        = -lib -nologo -out:$@ 
 WIN32_release_LDLIBS = ws2_32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib
 WIN32_debug_LDLIBS = ws2_32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib
@@ -191,7 +191,7 @@ WIN32_VS2013_AR             = $(WIN32_LD)
 WIN32_VS2013_debug_LDFLAGS  = 
 WIN32_VS2013_LDFLAGS        = -DYNAMICBASE -NXCOMPAT -nologo -DEBUG -out:$@
 WIN32_VS2013_SLDFLAGS       = -dll $(WIN32_VS2013_LDFLAGS)
-WIN32_VS2013_ARFLAGS        = -lib -nologo -out:$@ 
+WIN32_VS2013_ARFLAGS        = -lib -nologo -out:$@
 WIN32_VS2013_release_LDLIBS = ws2_32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib
 WIN32_VS2013_debug_LDLIBS = ws2_32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib
 WIN32_VS2013_LDLIBS         = -DYNAMICBASE -NXCOMPAT $(WIN32_$(CONFIG)_LDLIBS)
@@ -903,10 +903,10 @@ S390_LINUX_CP             = cp -f
 S390_LINUX_DEBUGGER       = ddd
 S390_LINUX_CC             = $(LINUX_CC)
 S390_LINUX_CXX            = $(LINUX_CXX)
-S390_LINUX_CFLAGS         = -m31 $(LINUX_$(CONFIG)_CFLAGS) -D_REENTRANT -fno-strict-aliasing -fno-exceptions -fPIC -Wall -c
+S390_LINUX_CFLAGS         = -m31 -std=gnu99 $(LINUX_$(CONFIG)_CFLAGS) -D_REENTRANT -fno-strict-aliasing -fno-exceptions -fPIC -Wall -c
 S390_LINUX_debug_CFLAGS    =
 S390_LINUX_release_CFLAGS  =
-S390_LINUX_CXXFLAGS       = -m31 $(LINUX_$(CONFIG)_CFLAGS) -D_REENTRANT -fno-strict-aliasing -fPIC -Wall -c
+S390_LINUX_CXXFLAGS       = -m31 -std=gnu99 $(LINUX_$(CONFIG)_CFLAGS) -D_REENTRANT -fno-strict-aliasing -fPIC -Wall -c
 S390_LINUX_LD             = $(S390_LINUX_CC)
 S390_LINUX_LD_CXX         = $(S390_LINUX_CXX)
 S390_LINUX_SLD            = $(S390_LINUX_LD)
@@ -981,7 +981,7 @@ ZOS_CFLAGS         = $(ZOS_$(CONFIG)_CFLAGS) -DCHARSET_EBCDIC -DOPEN_THREADS=2 -
 # and similar files exported no symbols... -D_REENTRANT -c 
 ZOS_LD             = $(ZOS_CC)
 # Correct, use the C compiler to link.
-ZOS_LD_CXX         = $(ZOS_CC)
+ZOS_LD_CXX         = $(ZOS_CXX)
 ZOS_SLD            = $(ZOS_LD)
 ZOS_AR             = ar
 ZOS_LDFLAGS        = -Wl,dll,xplink,lp64 $(ZOS_OUT) $@ 
@@ -1017,7 +1017,7 @@ ZOSA_CXXFLAGS       = $(ZOSA_CFLAGS)
 # and similar files exported no symbols... -D_REENTRANT -c 
 ZOSA_LD             = $(ZOSA_CC)
 # Correct, use the C compiler to link.
-ZOSA_LD_CXX         = $(ZOSA_CC)
+ZOSA_LD_CXX         = $(ZOSA_CXX)
 ZOSA_SLD            = $(ZOSA_LD)
 ZOSA_AR             = ar
 ZOSA_LDFLAGS        = -Wl,dll,xplink,lp64 $(ZOS_OUT) $@ 
@@ -1053,7 +1053,7 @@ ZOS31_CFLAGS         = $(ZOS31_$(CONFIG)_CFLAGS) -DCHARSET_EBCDIC -DOPEN_THREADS
 # and similar files exported no symbols... -D_REENTRANT -c 
 ZOS31_LD             = $(ZOS31_CC)
 # Correct, use the C compiler to link.
-ZOS31_LD_CXX         = $(ZOS31_CC)
+ZOS31_LD_CXX         = $(ZOS31_CXX)
 ZOS31_SLD            = $(ZOS31_LD)
 ZOS31_AR             = ar
 ZOS31_LDFLAGS        = -Wl,dll,xplink $(ZOS31_OUT) $@ 
@@ -1086,7 +1086,7 @@ ZOSA31_CFLAGS         = $(ZOSA31_$(CONFIG)_CFLAGS) -DOPEN_THREADS=2 -D_XOPEN_SOU
 # and similar files exported no symbols... -D_REENTRANT -c 
 ZOSA31_LD             = $(ZOSA31_CC)
 # Correct, use the C compiler to link.
-ZOSA31_LD_CXX         = $(ZOSA31_CC)
+ZOSA31_LD_CXX         = $(ZOSA31_CXX)
 ZOSA31_SLD            = $(ZOSA31_LD)
 ZOSA31_AR             = ar
 ZOSA31_LDFLAGS        = -Wl,dll,xplink $(ZOSA31_OUT) $@ 
@@ -1383,7 +1383,7 @@ HPUX_LDFLAGS        = $(HPUX_OUT) $@
 HPUX_SLDFLAGS       = -z -b $(HPUX_LDFLAGS) +b \$$ORIGIN:/usr/lib -B direct -B symbolic +s
 HPUX_ICCLIB_LNK     = +I iccSLInitializer	
 HPUX_ARFLAGS        = -ruv $@
-HPUX_LDLIBS         = -lpthread  -ldld -lrt
+HPUX_LDLIBS         = -lpthread -ldld -lrt
 HPUX_OBJSUFX        = .o
 HPUX_EXESUFX        =
 HPUX_SHLPRFX        = lib
