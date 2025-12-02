@@ -76,12 +76,9 @@ zutil$(OBJSUFX): $(ZLIB_DIR)/zutil.c $(ZLIB_DIR)/zlib.h
 #-
 
 create_zlib: $(ZLIB_TAR)
-	if [ -e $(ZLIB_DIR) ] ; then rm -r $(ZLIB_DIR) ; fi
 	[ -n "$(EX_SUFFIX)" ] || \
 	( cd $(ICC_ROOT) ; \
 	   tar xzf openssl_source/$(ZLIB_NAME).tar.gz ; \
-	   mkdir -p openssl_source/zlib/$(ZLIB_VER) ; \
-	   cp openssl_source/*.patch openssl_source/zlib/$(ZLIB_VER)/ 2>/dev/null || true ; \
 	)
 	[ -n "$(EX_SUFFIX)" ] || \
 	( cd $(ICC_ROOT)/$(ZLIB_NAME) ; \
