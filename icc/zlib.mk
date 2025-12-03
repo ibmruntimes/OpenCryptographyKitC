@@ -18,7 +18,7 @@ ZLIB_TAR   = $(ICC_ROOT)/openssl_source/$(ZLIB_NAME).tar.gz
 # EX_SUFFIX (=_ex) is defined to build from source already extracted from tar file and
 # checked into source control. This option is used by iSeries/OS400 for Clearcase builds.
 # removed zlib version from ZLIB_DIR so that the name does not keep changing so that MSVC projects are possible
-ZLIB_DIR   = $(ICC_ROOT)/openssl_source/zlib$(EX_SUFFIX)
+ZLIB_DIR   = $(ICC_ROOT)/zlib$(EX_SUFFIX)
 
 ZLIB_SRC = $(ZLIB_DIR)/adler32.c $(ZLIB_DIR)/compress.c $(ZLIB_DIR)/crc32.c \
 	$(ZLIB_DIR)/deflate.c $(ZLIB_DIR)/trees.c $(ZLIB_DIR)/zutil.c
@@ -76,12 +76,17 @@ zutil$(OBJSUFX): $(ZLIB_DIR)/zutil.c $(ZLIB_DIR)/zlib.h
 #-
 
 create_zlib: $(ZLIB_TAR)
+	if [ -e $(ZLIB_DIR) ] ; then rm -r $(ZLIB_DIR) ; fi
 	[ -n "$(EX_SUFFIX)" ] || \
-	( cd $(ICC_ROOT) ; \
-	   tar xzf openssl_source/$(ZLIB_NAME).tar.gz ; \
+	( cd .. ; \
+	   rm -rf x; mkdir x; cd x; \
+	   tar xzf $(ZLIB_TAR) ; \
+	   sleep 1 ; \
+	   mv $(ZLIB_NAME) $(ZLIB_DIR) ; \
+	   cd ..; \
 	)
 	[ -n "$(EX_SUFFIX)" ] || \
-	( cd $(ICC_ROOT)/$(ZLIB_NAME) ; \
-		sh $(ICC_ROOT)/openssl_source/tools/patchem2 "$(ICC_ROOT)/openssl_source/zlib/$(ZLIB_VER)" ; \
+	( cd $(ZLIB_DIR); \
+		sh ../openssl_source/tools/patchem2 "../openssl_source/zlib/$(ZLIB_VER)" ;\
 	)
 
