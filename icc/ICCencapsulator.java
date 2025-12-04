@@ -409,7 +409,7 @@ public class ICCencapsulator
 				doWork(new File_one_sh()); // one.sh
 			}
 			catch (FileNotFoundException e) {
-				System.out.println("Failed: out.sh");
+				System.out.println(e.getMessage());
 			  // ignore
 			}
 

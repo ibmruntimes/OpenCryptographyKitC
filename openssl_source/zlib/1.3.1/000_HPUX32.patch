@@ -1,0 +1,15 @@
+diff -urN zlib-1.2.12.orig/zutil.h zlib-1.2.12/zutil.h
+--- zlib-1.2.12.orig/zutil.h	2022-03-28 09:39:42.000000000 +1000
++++ zlib-1.2.12/zutil.h	2022-04-27 12:51:00.908632154 +1000
+@@ -42,6 +42,11 @@
+ typedef ush FAR ushf;
+ typedef unsigned long  ulg;
+ 
++/* 32 bit HP/UX compiler we use won't handle the large constants below */
++#if defined(__hpux) && !defined(__LP64__)
++# define Z_U8 0xffffffffffffffff
++#endif
++
+ #if !defined(Z_U8) && !defined(Z_SOLO) && defined(STDC)
+ #  include <limits.h>
+ #  if (ULONG_MAX == 0xffffffffffffffff)
