@@ -11,7 +11,6 @@
 //        This incorporates ICC into the error facilities of OpenSSL.
 */
 
-
 #include "openssl/err.h"
 #include "iccversion.h"
 #include "platform.h"

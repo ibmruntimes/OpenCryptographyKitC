@@ -10,7 +10,7 @@ $(ASMOBJS): asm/aix64/rng-ppc.s
 tmp/dummyfile: $(SLIBCRYPTO)
 	$(MKDIR) tmp
 	( cd tmp; \
-	  ar -x -X64 ../$(SLIBCRYPTO); \
+	  $(AR) x ../$(SLIBCRYPTO); \
 	  cd .. ; \
 	)
 	touch $@

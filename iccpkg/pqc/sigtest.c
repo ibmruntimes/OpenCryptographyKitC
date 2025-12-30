@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 #if 0
 #include <stdbool.h>
@@ -28,6 +29,33 @@
 #endif
 
 # include "icc.h"
+/* comment this line out if linking to shared lib import library */
+#define DYNAMIC_LOAD_ICC
+#ifdef DYNAMIC_LOAD_ICC
+
+#define ICC_FP_NAME pfn_Table
+
+#ifdef ICC_FP_NAME
+/* dynamic load library from file name */
+# define MAP_ICC_API
+# include "icc_loader.h"
+
+ICC_Function_Table fn_Table ;
+ICC_Function_Table* pfn_Table = &fn_Table;
+#endif
+#else
+#if defined(JGSK_WRAP)
+/* Using JCC_ namespace - reserved for Java JNI */
+#include "jcc_a.h"
+#else
+#if defined(ICKC_WRAP)
+/* Using ICKC_ namespace */
+#include "ickc_a.h"
+#endif
+#endif
+#endif
+
+
 
 /* We want to use PKCS1 and PKCS8 encodings for i2d/d2i */
 /* these are all independent bits that can be combined */
@@ -36,6 +64,61 @@
 enum ed { none = 0, raw = 1, pkcs1 = 2, pkcs8 = 4 };
 
 /* Helper function to print byte arrays in hexadecimal */
+
+static size_t hex2bin(unsigned char* bin, const char* hexString, size_t hexlen)
+{
+   /* note hex string may contain spaces so bin len not be exactly hex len / 2, but always less than or equal to */
+   unsigned char *r = bin;
+   unsigned char byte = 0;
+   bool first = true;
+   size_t i;
+   for (i = 0; i < hexlen; i++)
+   {
+      char c = hexString[i];
+      if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
+         continue; /* ignore white space */
+
+      /* convert to binary */
+      if ('0' <= c && c <= '9') {
+         c -= '0';
+      }
+      else if ('A' <= c && c <= 'F') {
+         c -= 'A';
+         c += 10;
+      }
+      else if ('a' <= c && c <= 'f') {
+         c -= 'a';
+         c += 10;
+      }
+      else if (i == hexlen - 1 && !c) {
+         /* ignore null at end */
+         continue;
+      }
+      else {
+         /* non hex char */
+         return -1;
+      }
+
+      if (first) {
+         byte = (unsigned char) ((c & 0x0F) << 4);
+         first = false;
+      }
+      else {
+         /* finish this byte and append to result */
+         byte |= (unsigned char)(c & 0x0F);
+         *r++ = byte;
+         first = true;
+      }
+   }
+   if (!first) {
+      /* didn't get second char - error */
+      return -2;
+   }
+
+   /* return binary length */
+   return r - bin;
+}
+
 static
 void fprintBstr(FILE* fp, const char* S, const unsigned char* A, size_t L)
 {
@@ -69,6 +152,17 @@ struct kbuf_s {
    size_t len;
 };
 typedef struct kbuf_s kbuf;
+
+void kbuf_dup(kbuf* t, const kbuf* s)
+{
+   if (t && s && s->data && s->len) {
+      t->data = malloc(s->len);
+      if (t->data) {
+         memcpy(t->data, s->data, s->len);
+         t->len = s->len;
+      }
+   }
+}
 
 /* Public key - encoded */
 struct pkbuf_s {
@@ -273,7 +367,7 @@ SignatureEVP_gen(ICC_CTX* ctx, const char* nm, pkbuf* p_pkc, skbuf* p_skc, enum 
 /* Sign a message - return 0 for success, non-zero otherwise */
 
 int
-SignatureEVP_sign(ICC_CTX* ctx, sbuf* sig, const skbuf* p_skc, const unsigned char* msg, size_t msg_len, enum ed encdec, const char* hash)
+SignatureEVP_sign(ICC_CTX* ctx, sbuf* sig, const skbuf* p_skc, const sbuf* msg, enum ed encdec, const char* hash)
 {
    int rc;
    size_t siglen = 0;
@@ -320,7 +414,7 @@ SignatureEVP_sign(ICC_CTX* ctx, sbuf* sig, const skbuf* p_skc, const unsigned ch
          return 1; /* Sign initialization failed */
       }
 
-      rc = ICC_EVP_PKEY_sign(ctx, skc, NULL, &siglen, msg, msg_len);
+      rc = ICC_EVP_PKEY_sign(ctx, skc, NULL, &siglen, msg->data, msg->len);
       if (rc != ICC_OSSL_SUCCESS) {
          return 2; /* Failed to get signature length */
       }
@@ -330,7 +424,7 @@ SignatureEVP_sign(ICC_CTX* ctx, sbuf* sig, const skbuf* p_skc, const unsigned ch
          return 3; /* Memory allocation failed */
       }
 
-      rc = ICC_EVP_PKEY_sign(ctx, skc, signature, &siglen, msg, msg_len);
+      rc = ICC_EVP_PKEY_sign(ctx, skc, signature, &siglen, msg->data, msg->len);
       if (rc != ICC_OSSL_SUCCESS) {
          free(signature);
          return 4; /* Signing failed */
@@ -355,7 +449,7 @@ SignatureEVP_sign(ICC_CTX* ctx, sbuf* sig, const skbuf* p_skc, const unsigned ch
             return 5;
          }
       }
-      rc = ICC_EVP_SignUpdate(ctx, md, msg, (unsigned int)msg_len);
+      rc = ICC_EVP_SignUpdate(ctx, md, msg->data, (unsigned int)msg->len);
       if (rc != ICC_OSSL_SUCCESS) {
          return 6;
       }
@@ -403,7 +497,7 @@ SignatureEVP_sign(ICC_CTX* ctx, sbuf* sig, const skbuf* p_skc, const unsigned ch
 
 /* Verify a signature - return 0 for success, non-zero for failure */
 int
-SignatureEVP_verify(ICC_CTX* ctx, const pkbuf* p_pkc, const unsigned char* msg, size_t msg_len, const sbuf* sig, enum ed encdec, const char* hash)
+SignatureEVP_verify(ICC_CTX* ctx, const pkbuf* p_pkc, const sbuf* msg, const sbuf* sig, enum ed encdec, const char* hash)
 {
    int rc = -1;
    ICC_EVP_PKEY* pa = NULL;
@@ -446,7 +540,7 @@ SignatureEVP_verify(ICC_CTX* ctx, const pkbuf* p_pkc, const unsigned char* msg, 
          return 3; /* Verification initialization failed */
       }
 
-      rc = ICC_EVP_PKEY_verify(ctx, evp_pk, sig->data, sig->len, msg, msg_len);
+      rc = ICC_EVP_PKEY_verify(ctx, evp_pk, sig->data, sig->len, msg->data, msg->len);
    }
    else {
       /* need to hash / verify */
@@ -465,7 +559,7 @@ SignatureEVP_verify(ICC_CTX* ctx, const pkbuf* p_pkc, const unsigned char* msg, 
             return 5;
          }
       }
-      rc = ICC_EVP_VerifyUpdate(ctx, md, msg, (unsigned int)msg_len);
+      rc = ICC_EVP_VerifyUpdate(ctx, md, msg->data, (unsigned int)msg->len);
       if (rc != ICC_OSSL_SUCCESS) {
          ICC_EVP_MD_CTX_free(ctx, md);
          ICC_EVP_PKEY_free(ctx, pa);
@@ -494,7 +588,7 @@ SignatureEVP_verify(ICC_CTX* ctx, const pkbuf* p_pkc, const unsigned char* msg, 
 
 /* Signature test function - generates keys, signs a message, and verifies the signature */
 int
-PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, size_t msg_len, int verbose, int encdec)
+PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, int verbose, int encdec, const kbuf* pub, const kbuf* pri, const sbuf* msg, const sbuf* sig)
 {
    FILE* fp_rsp = stdout;
    int ret_val;
@@ -505,23 +599,37 @@ PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, size_t msg_le
    if (verbose) {
       printf("Algorithm : %s\n", algname);
       printf("Hash : %s\n", hash? hash:"NULL");
-      printf("Data length : %u\n", (unsigned)msg_len);
    }
 
+   if ((pub && pub->data) && (pri && pri->data)) {
+      /* use supplied keys */
+      const int nid = ICC_OBJ_txt2nid(ctx, algname);
+
+      kbuf_dup(&pk.der, pub);
+      pk.nid = nid;
+      kbuf_dup(&sk.der, pri);
+      sk.nid = nid;
+   }
+   else
    {
       /* Generate the public/private keypair */
       if (verbose) {
-         printf("keygen\t");
+         printf("keygen\n");
       }
       if ((ret_val = SignatureEVP_gen(ctx, algname, &pk, &sk, encdec)) != 0) {
          printf("Error: SignatureEVP_gen(ctx, %s, &pk, &sk, %d) returned <%d>\n", algname, encdec, ret_val);
          return 1;
       }
+   }
       if (verbose) {
-         fprintBstr(fp_rsp, "pk = ", pk.der.data, pk.der.len);
+      fprintf(fp_rsp, "pk encoding length = %d\n", (int)pk.der.len);
+      fprintf(fp_rsp, "pk %s\n", (encdec & pkcs1) ? "pkcs1" : "raw");
+      fprintBstr(fp_rsp, "", pk.der.data, pk.der.len);
+
+      fprintf(fp_rsp, "sk encoding length = %d\n", (int)sk.der.len);
          if (encdec & (raw | pkcs8)) {
-            fprintBstr(fp_rsp, "sk = ", sk.der.data, sk.der.len);
-         }
+         fprintf(fp_rsp, "sk %s\n", (encdec & pkcs8) ? "pkcs8" : "raw");
+         fprintBstr(fp_rsp, "", sk.der.data, sk.der.len);
       }
    }
 
@@ -529,7 +637,7 @@ PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, size_t msg_le
       int keylen = 0;
       keylen = ICC_EVP_PKEY_size(ctx, sk.key);
       if (verbose) {
-         fprintf(fp_rsp, "key size = %d", keylen);
+         fprintf(fp_rsp, "key size = %d\n", keylen);
       }
    }
 
@@ -548,29 +656,28 @@ PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, size_t msg_le
    }
 
    {
-      sbuf signature;
-      unsigned char* message = malloc(msg_len);
-      if (message) {
-         count_up(message, msg_len);
-      }
+      sbuf signature = { 0,0 };
+      kbuf_dup(&signature, sig);
 
+      if (!signature.data) {
       if (verbose) {
-         printf("sign\t");
+            printf("sign\n");
       }
-      if ((ret_val = SignatureEVP_sign(ctx, &signature, &sk, message, msg_len, encdec, hash)) != 0) {
+         if ((ret_val = SignatureEVP_sign(ctx, &signature, &sk, msg, encdec, hash)) != 0) {
          printf("SignatureEVP_sign returned <%d>\n", ret_val);
          return 2;
       }
-      if (verbose) {
-         fprintBstr(fp_rsp, "signature = ", signature.data, signature.len);
+         if (verbose == 2) {
+            fprintBstr(fp_rsp, "signature =\n", signature.data, signature.len);
+         }
       }
 
       fprintf(fp_rsp, "\n");
       if (verbose) {
-         printf("verify\t");
+         printf("verify\n");
       }
       {
-         ret_val = SignatureEVP_verify(ctx, &pk, message, msg_len, &signature, encdec, hash);
+         ret_val = SignatureEVP_verify(ctx, &pk, msg, &signature, encdec, hash);
          if (ret_val != 0) {
             printf("SignatureEVP_verify failed with code <%d>\n", ret_val);
             return 3;
@@ -584,7 +691,6 @@ PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, size_t msg_le
          free(signature.data);
          signature.data = NULL;
       }
-      free(message);
    }
 
    /* Clean up allocated resources */
@@ -608,18 +714,131 @@ PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, size_t msg_le
    return 0;
 }
 
+/* Performance test function - measures time for key generation, signing, and verification */
+int
+alg_performance(ICC_CTX* ctx, const char* algname, const char* hash, sbuf* msg, enum ed encdec)
+{
+   clock_t start, end;
+   double elapsed_time;
+   int ret_val;
+   pkbuf pk = { 0 }; /* public key */
+   skbuf sk = { 0 }; /* private/secret key */
+   printf("Performance testing for algorithm: %s\n", algname);
+
+   /* Measure key generation time */
+   start = clock();
+   ret_val = SignatureEVP_gen(ctx, algname, &pk, &sk, encdec);
+   end = clock();
+   if (ret_val != 0) {
+      printf("Error: SignatureEVP_gen(ctx, %s, &pk, &sk, %d) returned <%d>\n", algname, encdec, ret_val);
+      return 1;
+   }
+
+   elapsed_time = (double)(end - start) / CLOCKS_PER_SEC;
+   printf("Generating key pair succeeded\n");
+   printf("Elapsed time: %f seconds\n", elapsed_time);
+
+   /* get rid of gen context */
+   if (sk.ctx) {
+      ICC_EVP_PKEY_CTX_free(ctx, sk.ctx);
+      sk.ctx = NULL;
+   }
+
+   if (encdec & (raw | pkcs8)) {
+      /* delete ICC key and context so we use private encoding */
+      if (sk.key) {
+         ICC_EVP_PKEY_free(ctx, sk.key);
+         sk.key = NULL;
+      }
+   }
+
+   /* Measure signing time */
+   sbuf signature;
+
+   /* sometimes op is quicker than clock can resolve so do multiple until we get a time */
+   {
+      size_t i;
+      end = start = clock();
+      for (i = 0; end == start; i++) {
+         ret_val = SignatureEVP_sign(ctx, &signature, &sk, msg, encdec, hash);
+         end = clock();
+
+         if (ret_val != 0) {
+            printf("SignatureEVP_sign failed with code <%d>\n", ret_val);
+            return 2;
+         }
+      }
+
+      elapsed_time = (double)(end - start) / i / CLOCKS_PER_SEC;
+   }
+   printf("Generating signatures succeeded\n");
+   printf("Elapsed time: %f seconds\n", elapsed_time);
+
+   /* Measuring verification time */
+   {
+      size_t i;
+      end = start = clock();
+      for (i = 0; end == start; i++) {
+         ret_val = SignatureEVP_verify(ctx, &pk, msg, &signature, encdec, hash);
+         end = clock();
+
+         if (ret_val != 0) {
+            printf("SignatureEVP_verify failed with code <%d>\n", ret_val);
+            return 3;
+         }
+      }
+
+      elapsed_time = (double)(end - start) / i / CLOCKS_PER_SEC;
+   }
+   printf("Signatures verification succeeded\n");
+   printf("Elapsed time: %f seconds\n", elapsed_time);
+
+   /* Clean up allocated resources */
+   if (signature.data) {
+      free(signature.data);
+      signature.data = NULL;
+   }
+   if (pk.der.data) {
+      free(pk.der.data);
+      pk.der.data = NULL;
+   }
+   if (sk.ctx) {
+      ICC_EVP_PKEY_CTX_free(ctx, sk.ctx);
+      sk.ctx = NULL;
+   }
+   if (sk.key) {
+      ICC_EVP_PKEY_free(ctx, sk.key);
+      sk.key = NULL;
+   }
+   if (sk.der.data) {
+      free(sk.der.data);
+      sk.der.data = NULL;
+   }
+
+   return 0;
+}
+
+
 static
 char* algs[] =
 {
    "rsaEncryption",
-   "ML_DSA_44", /* "Dilithium_512",*/
-   "ML_DSA_65", /* "Dilithium_768",*/
-   "ML_DSA_87", /* "Dilithium_1024",*/
-   "SLH_DSA_SHAKE_128s", /* sphincs */
-   /*
+   "ML-DSA-44", /* "Dilithium_512",*/
+   "ML-DSA-65", /* "Dilithium_768",*/
+   "ML-DSA-87", /* "Dilithium_1024",*/
+   /* sphincs */
+   "SLH_DSA_SHA2_128s",
+   "SLH_DSA_SHA2_128f",
+   "SLH_DSA_SHA2_192s",
+   "SLH_DSA_SHA2_192f",
+   "SLH_DSA_SHA2_256s",
+   "SLH_DSA_SHA2_256f",
+   "SLH_DSA_SHAKE_128s",
+   "SLH_DSA_SHAKE_128f",
    "SLH_DSA_SHAKE_192s",
+   "SLH_DSA_SHAKE_192f",
    "SLH_DSA_SHAKE_256s",
-   */
+   "SLH_DSA_SHAKE_256f",
    NULL
 };
 
@@ -671,10 +890,15 @@ int main(int argc, const char *argv[])
    const char* algname = NULL;
    const char* hash = NULL; /*eg, "SHA256"*/
    const char* iccPath = NULL;
-   bool isFips = false, wantFips = false, verbose = false ;
+   kbuf pubKey = { 0,0, };
+   kbuf priKey = { 0,0, };
+   sbuf msg = { 0,100 };
+   sbuf sig = { 0,0 };
+   bool isFips = false, wantFips = false;
+   int verbose = 0; /* 1 = verbose, 2 = more verbose */
    bool wantTraceCB = false; /* Trace callback */
    bool wantFipsCB = false; /* FIPS callback */
-   size_t dataSize = 100;
+   bool performanceTest = false; /* Performance test flag */
    enum ed encdec = none;
    int rv = 0;
 
@@ -682,48 +906,62 @@ int main(int argc, const char *argv[])
    if(argc > 1) {
       const char* arg;
       int i;
-      for( i = 1; i < argc; i++) {
+      for( i = 1; rv == 0 && i < argc; i++) {
          arg = argv[i];
-         if (NULL != strstr(arg, "-?")) {
+         if (0 == strcmp(arg, "-?")) {
             int j;
-            printf("Usage: sigtest [-v] [-fips] [-fcb] [-tcb] [-alg <algorithm name>] [-h <hash algorithm name>] [-l <message data length>] [-ed <none|raw|pkcs[1|8]>] [<number (see list below)>]\n");
+            printf("Usage: sigtest [-v|V] [-fips] [-fcb] [-tcb] [-p] [-path] [-alg <algorithm name>] [-h <hash algorithm name>] [-l <message data length>] [-ed <none|raw|pkcs[1|8]>] [<number (see list below)>]\n");
+            printf("     -v       Verbose (dump keys), -V more verbose (dump signatures)\n");
             printf("     -fips    Request FIPS mode ICC\n");
             printf("     -fcb     Install a FIPS callback routine (prints message 'fcb:...')\n");
             printf("     -tcb     Install a TRACE callback routine (prints message 'tcb:...')\n");
             printf("     -alg     Refer following table...\n");
+            printf("     -p       Run performance test for all algorithms\n");
+            printf("     -path    icc library path\n");
+            printf("     -pub     Specify public key PKCS1 encoding in hex\n");
+            printf("     -pri     Specify private key PKCS8 encoding in hex\n");
+            printf("     -msg     Specify message to sign hex\n");
+            printf("     -sig     Specify signature in hex\n");
             for ( j = 1; to_SIGNATURE_ALGNAME(j); j++) {
                printf(" %d    %s\n", j, to_SIGNATURE_ALGNAME(j));
             }
             printf("     -hash    OpenSSL/ICC hash function (e.g. SHA256)\n");
             printf("     -ed      Key Encoding\n");
-            return 0;
+            argc = 0;
+            rv = 0;
          }
-         else if (NULL != strstr(arg, "-fips")) {
+         else if (0 == strcmp(arg, "-fips")) {
             wantFips = true;
          }
-         else if (NULL != strstr(arg, "-fcb")) {
+         else if (0 == strcmp(arg, "-fcb")) {
             wantFipsCB = true;
             wantFips = true;
          }
-         else if (NULL != strstr(arg, "-tcb")) {
+         else if (0 == strcmp(arg, "-tcb")) {
             wantTraceCB = true;
          }
-         else if (NULL != strstr(arg, "-h")) {
+         else if (0 == strcmp(arg, "-h")) {
             i++;
             hash = argv[i];
          }
-         else if (NULL != strstr(arg, "-l")) {
+         else if (0 == strcmp(arg, "-l")) {
             i++;
-            dataSize = atoi(argv[i]);
+            msg.len = atoi(argv[i]);
          }
-         else if (NULL != strstr(arg, "-p")) {
+         else if (0 == strcmp(arg, "-p")) {
+            performanceTest = true;
+         }
+         else if (0 == strcmp(arg, "-path")) {
             i++;
             iccPath = argv[i];
          }
-         else if (NULL != strstr(arg, "-v")) {
-            verbose = true;
+         else if (0 == strcmp(arg, "-v")) {
+            verbose = 1;
          }
-         else if (NULL != strstr(arg, "-ed")) {
+         else if (0 == strcmp(arg, "-V")) {
+            verbose = 2;
+         }
+         else if (0 == strcmp(arg, "-ed")) {
             i++;
             arg = argv[i];
             if (!strcmp(arg, "none"))
@@ -738,16 +976,41 @@ int main(int argc, const char *argv[])
                encdec = pkcs1 | pkcs8;
             else {
                printf("%s: bad encoding, try -? to get help\n", arg);
-               return -1;
+               rv = -1;
             }
          }
-         else if (NULL != strstr(arg, "-alg")) {
+         else if (0 == strcmp(arg, "-pub")) {
+            i++;
+            if (pubKey.data) free(pubKey.data);
+            pubKey.data = malloc(strlen(argv[i]) / 2);
+            pubKey.len = hex2bin(pubKey.data, argv[i], strlen(argv[i]));
+         }
+         else if (0 == strcmp(arg, "-pri")) {
+            i++;
+            if (priKey.data) free(priKey.data);
+            priKey.data = malloc(strlen(argv[i]) / 2);
+            priKey.len = hex2bin(priKey.data, argv[i], strlen(argv[i]));
+         }
+         else if (0 == strcmp(arg, "-msg")) {
+            i++;
+            if (msg.data) free(msg.data);
+            msg.data = malloc(strlen(argv[i]) / 2);
+            msg.len = hex2bin(msg.data, argv[i], strlen(argv[i]));
+            }
+         else if (0 == strcmp(arg, "-sig")) {
+            i++;
+            if (sig.data) free(sig.data);
+            sig.data = malloc(strlen(argv[i]) / 2);
+            sig.len = hex2bin(sig.data, argv[i], strlen(argv[i]));
+         }
+         else if (0 == strcmp(arg, "-alg")) {
             i++;
             algname = argv[i];
          }
          else if (*arg == '-') {
-            /* another setting - pass it on */
-            i++;
+            /* unknown setting - pass it on */
+            printf("unknown arg %s", arg);
+            rv = -1;
          }
          else {
             int k = 0;
@@ -755,18 +1018,37 @@ int main(int argc, const char *argv[])
             algname = to_SIGNATURE_ALGNAME(k);
             if (k == 0 || !algname) {
                printf("%s: bad argument, try -? to get help\n", arg);
-               return -1;
+               rv = -1;
             }
          }
       }
    }
 
+   if (rv == 0)
    {
       ICC_STATUS status;
       ICC_CTX* icc_ctx = NULL;
+#ifdef ICC_FP_NAME
+      LIB_HANDLE lib_handle = load_icc_library(iccPath);
+      if(lib_handle == NULL)
+      {
+         printf("Failed to load library %s\n", iccPath);
+         rv = -1;
+         goto free_pub_pri_data;
+      }
 
+      if(0 != load_icc_functions(lib_handle, pfn_Table))
+      {
+         printf("Failed to load functions \n");
+         unload_icc_functions(pfn_Table); /* Properly unload the library to prevent memory leak */
+         rv = -1;
+         goto free_pub_pri_data;
+      }
       /* Initialize ICC context */
+      icc_ctx = ICC_Init(&status, NULL);
+#else
       icc_ctx = ICC_Init(&status, iccPath);
+#endif
       if (NULL == icc_ctx) {
          printf("ICC not initialized, exiting\n");
          if (iccPath)
@@ -848,21 +1130,77 @@ int main(int argc, const char *argv[])
       }
 #endif
 
-      if (!algname) {
-         /* default */
-         algname = to_SIGNATURE_ALGNAME(3); /* Dilithium 768 */
-         printf("algname = %s\n", algname?algname:"NULL");
+      if (!msg.data) {
+         msg.data = malloc(msg.len);
+         if (msg.data) {
+            count_up(msg.data, msg.len);
+            if (verbose == 2) {
+               fprintBstr(stdout, "message =\n", msg.data, msg.len);
+            }
+         }
       }
-      /* Execute the signature test */
-      rv = PQC_sign_test(icc_ctx, algname, hash, dataSize, verbose, encdec);
+
+      if (performanceTest) {
+         if (algname) {
+            /* Run performance test for the specified algorithm */
+            printf("\n--- Performance test for algorithm: %s ---\n", algname);
+            rv = alg_performance(icc_ctx, algname, hash, &msg, encdec);
+            if (rv) {
+               OpenSSLError(icc_ctx);
+               printf("%s: Error %d during performance test\n", algname, rv);
+            }
+         } 
+         else {
+            /* Run performance test for all algorithms */
+            int i;
+            for (i = 0; algs[i] != NULL; i++) {
+               printf("\n--- Performance test for algorithm %d: %s ---\n", i+1, algs[i]);
+               rv = alg_performance(icc_ctx, algs[i], hash, &msg, encdec);
+               if (rv) {
+                  OpenSSLError(icc_ctx);
+                  printf("%s: Error %d during performance test\n", algs[i], rv);
+               }
+            }  
+         } 
+      } else {
+         if (algname) {
+            /* Execute the sigPQC_Sign_test for specified algname */
+            rv = PQC_sign_test(icc_ctx, algname, hash, verbose, encdec, &pubKey, &priKey, &msg, &sig);
       if (rv) {
          OpenSSLError(icc_ctx);
          printf("%s: Error %d, try -? to get help\n", algname, rv);
+      }
+            else{
+               printf("PQC_Sign_test for algorithm: %s successful\n", algname);
+            }
+         }
+         else {
+            /* Run PQC_Sign_test test for all algorithms */
+            int i;
+            for (i = 0; algs[i] != NULL; i++) {
+               printf("\n--- PQC_Sign_test for algorithm %d: %s ---\n", i+1, algs[i]);
+               rv = PQC_sign_test(icc_ctx, algs[i], hash, verbose, encdec, NULL, NULL, &msg, NULL);
+               if (rv) {
+                  OpenSSLError(icc_ctx);
+                  printf("%s: Error %d during Signature test\n", algs[i], rv);
+               }
+               else{
+                  printf("PQC_Sign_testfor algorithm: %s successful\n", algs[i]);
+               }
+            }
+         }
       }
 
       /* Clean up ICC context */
       ICC_Cleanup(icc_ctx, &status);
    }
 
+free_pub_pri_data:
+   if (pubKey.data) free(pubKey.data);
+   if (priKey.data) free(priKey.data);
+   if (msg.data) free(msg.data);
+   if (sig.data) free(sig.data);
+
    return rv;
 }
+

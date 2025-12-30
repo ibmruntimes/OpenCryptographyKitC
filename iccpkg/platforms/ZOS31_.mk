@@ -9,20 +9,20 @@ $(AUXLIB_B)$(SHLSUFX): icc_aux$(OBJSUFX)
 
 $(GSK_LIBNAME): $(GSK_SDK) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) \
-		$(NEW_ICC)/iccsdk/$(ICCLIB) $(MUPPET) \
+		$(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(STKPK11) $(ZLIB_LIB) ../icc/csvquery.o
 	if [ -e OLD_ICC/ZOS*/iccsdk/libicc.a ] ; then chtag -r OLD_ICC/ZOS*/iccsdk/libicc.a; fi
 	if [ -e OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt ] ; then chtag -c ISO8859-1 OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt; fi
-	$(SLD) $(SLDFLAGS) \
-		gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
+	$(SLD) $(SLDFLAGS) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) ../icc/csvquery.o \
-		$(NEW_ICC)/iccsdk/$(ICCLIB) $(MUPPET) \
+		$(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(STKPK11) $(ZLIB_LIB)  \
 		$(LDLIBS)
 	$(CP) $(GSKLIB_B).x $(GSK_SDK)/
 	$(STRIP) $@
 
 ifneq ($(strip $(MUPPET)),)
+# MUPPET lib is present if there is a FIPS module - the object is the ICCC_ APIs
 OLD_ICC_OBJ=icc$(OBJSUFX)
 OLD_ICC_OBJ_AR=$(AR) x $(MUPPET) $(OLD_ICC_OBJ)
 OLD_ICC_OBJ_CLEAN=$(RM) $(OLD_ICC_OBJ)
@@ -44,22 +44,21 @@ $(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 
 # Java
 $(JGSK_LIBNAME): $(JGSK_SDK) jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
-		$(JTIMER_OBJS) \
-		$(NEW_ICC)/iccsdk/$(ICCLIB) $(MUPPET) \
-		$(ZLIB_LIB) ../icc/csvquery.o
+		$(JTIMER_OBJS) ../icc/csvquery.o \
+		$(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
+		$(ZLIB_LIB)
 	if [ -e OLD_ICC/ZOS*/iccsdk/libicc.a ] ; then chtag -r OLD_ICC/ZOS*/iccsdk/libicc.a; fi
 	if [ -e OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt ] ; then chtag -c ISO8859-1 OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt; fi
-	$(SLD)  $(SLDFLAGS)  \
-		jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
+	$(SLD) $(SLDFLAGS) jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
 		$(JTIMER_OBJS) ../icc/csvquery.o \
-		$(NEW_ICC)/iccsdk/$(ICCLIB) $(MUPPET) \
+		$(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) \
 		$(LDLIBS)
 	$(CP) $(JGSKLIB_B).x $(JGSK_SDK)/
 	$(STRIP) $@
 
 # ICKC
-$(ICKC_LIBNAME): $(ICKC_SDK) $(ICKC_DIR) ickc_wrap2$(OBJSUFX) \
+$(ICKC_LIBNAME): $(GSK_DIR) $(GSK_SDK) ickc_wrap2$(OBJSUFX) \
 		$(ICKCTIMER_OBJS) ../icc/csvquery.o \
 		$(ZICCOBJ) $(MUPPET) \
 		$(ZLIB_LIB)
@@ -67,16 +66,16 @@ $(ICKC_LIBNAME): $(ICKC_SDK) $(ICKC_DIR) ickc_wrap2$(OBJSUFX) \
 	if [ -e OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt ] ; then chtag -c ISO8859-1 OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt; fi
 	$(SLD) $(SLDFLAGS) ickc_wrap2$(OBJSUFX) \
 		$(ICKCTIMER_OBJS) ../icc/csvquery.o \
-		$(NEW_ICC)/iccsdk/$(ICCLIB) $(MUPPET) \
+		$(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) \
 		$(LDLIBS)
-	$(CP) $(ICKCLIB_B).x $(ICKC_SDK)/
+	$(CP) $(ICKCLIB_B).x $(GSK_SDK)/
 	$(STRIP) $@
 
 cache_test$(EXESUFX): cache_test$(OBJSUFX) exp$(OBJSUFX) \
-		$(TIMER_OBJS) $(NEW_ICC)/iccsdk/$(ICCLIB) $(MUPPET) \
+		$(TIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(STKPK11) $(ZLIB_LIB) 
 	$(LD) cache_test$(OBJSUFX) exp$(OBJSUFX) \
-		$(TIMER_OBJS) $(NEW_ICC)/iccsdk/$(ICCLIB) $(MUPPET)   \
+		$(TIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET)   \
 		$(STKPK11) $(ZLIB_LIB) \
 		$(LDLIBS) $(OUT) $@

@@ -173,7 +173,7 @@ static char *FUNCTION_NAME(MYNAME,_loaded_from)()
   if(NULL != dirName && NULL != libHandle) {
     int rc = GetModuleFileNameA(libHandle, dirName, MAX_PATH);
     if (rc != 0 && rc < MAX_PATH) {
-      result = (char *)calloc(strlen(dirName), sizeof(char));
+      result = (char *)calloc(strlen(dirName)+1, sizeof(char));
       if (NULL != result) {
         strncpy(result, dirName, strlen(dirName));
       }
@@ -213,7 +213,7 @@ static wchar_t * FUNCTION_NAME(MYNAME, _loaded_fromW)()
   if(NULL != dirName && NULL != libHandle) {
     int rc = GetModuleFileNameW(libHandle, dirName, MAX_PATH);
     if (rc != 0 && rc < MAX_PATH) {
-      result = (wchar_t *)calloc(wcslen(dirName), sizeof(wchar_t));
+      result = (wchar_t *)calloc(wcslen(dirName)+1, sizeof(wchar_t));
       if (NULL != result) {
         wcsncpy(result, dirName, wcslen(dirName));
       }
@@ -237,6 +237,8 @@ static wchar_t * FUNCTION_NAME(MYNAME, _loaded_fromW)()
 #define MAX_INFO 1024
 #define MAX_INFO2 (MAX_INFO*10)
 
+static char *FUNCTION_NAME(MYNAME,_loaded_from)(void);
+
 static char *gskiccs8_loaded_from_i(struct ld_info *dllinfo,int entries)
 {
   char  *dirName = NULL;  /*this library's initial directory name 
@@ -247,10 +249,11 @@ static char *gskiccs8_loaded_from_i(struct ld_info *dllinfo,int entries)
   int foundit = 0; /* Set to 1 if we can actually locate a path */
   char *rprv = NULL;
 
-  char *path = LIBNAME;
+  /* Look for this addr in each library */
+  uintptr_t local_addr = (uintptr_t)&FUNCTION_NAME(MYNAME,_loaded_from);
   struct ld_info *next = NULL;
   long k;
-  int i, j;
+  int i;
   char tmp[20];
   IN();
   dirName = (char *)calloc(MAX_PATH,1);
@@ -264,8 +267,13 @@ static char *gskiccs8_loaded_from_i(struct ld_info *dllinfo,int entries)
       i = 0;
       while ((next != NULL) && (next < &dllinfo[entries])) {
         i++;
-        j = strlen(next->ldinfo_filename);
-        if (strstr(next->ldinfo_filename, path)) {
+        /* Is this function in this loaded library? (in the data section when tested - function descriptor?) */
+        /* Text and data are not contiguous so check bounds of both */
+        /* Note embedded into both step lib and C/N modules. Each should return their own path*/
+        if (
+          ((uintptr_t)next->ldinfo_textorg <= local_addr && local_addr < ((uintptr_t)next->ldinfo_textorg + (uintptr_t)next->ldinfo_textsize))
+          ||
+          ((uintptr_t)next->ldinfo_dataorg <= local_addr && local_addr < ((uintptr_t)next->ldinfo_dataorg + (uintptr_t)next->ldinfo_datasize))) {
           /* found it */
           strncpy(fname, next->ldinfo_filename, MAX_PATH - 1);
           MARK("foundit", fname);
@@ -309,7 +317,7 @@ static char *gskiccs8_loaded_from_i(struct ld_info *dllinfo,int entries)
  * Find the path to this shared library on AIX
  * NOTE: ALLOCATES MEMORY THAT THE CALLER MUST FREE!!!!
  */
-static char *FUNCTION_NAME(MYNAME,_loaded_from)()
+static char *FUNCTION_NAME(MYNAME,_loaded_from)(void)
 {       
   char *result = NULL;
   static char msg_string[] = "Greater than 10k library objects loaded, recursive library load suspected";

@@ -27,6 +27,15 @@
 #   include <stdlib.h>
 #endif
 
+#if defined(JGSK_WRAP)
+/* Using JCC_ namespace - reserved for Java JNI */
+#include "jcc_a.h"
+#else
+#if defined(ICKC_WRAP)
+/* Using ICKC_ namespace */
+#include "ickc_a.h"
+#endif
+#endif
 #   include "icc.h"
 
 /* We want to use PKCS1 and PKCS8 encodings for i2d/d2i */
@@ -36,6 +45,60 @@
 enum ed { none = 0, raw = 1, pkcs1 = 2, pkcs8 = 4 };
 
 /* Helper function to print byte arrays in hexadecimal */
+static size_t hex2bin(unsigned char* bin, const char* hexString, size_t hexlen)
+{
+   /* note hex string may contain spaces so bin len not be exactly hex len / 2, but always less than or equal to */
+   unsigned char *r = bin;
+   unsigned char byte = 0;
+   bool first = true;
+   size_t i;
+   for (i = 0; i < hexlen; i++)
+   {
+      char c = hexString[i];
+      if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
+         continue; /* ignore white space */
+
+      /* convert to binary */
+      if ('0' <= c && c <= '9') {
+         c -= '0';
+      }
+      else if ('A' <= c && c <= 'F') {
+         c -= 'A';
+         c += 10;
+      }
+      else if ('a' <= c && c <= 'f') {
+         c -= 'a';
+         c += 10;
+      }
+      else if (i == hexlen - 1 && !c) {
+         /* ignore null at end */
+         continue;
+      }
+      else {
+         /* non hex char */
+         return -1;
+      }
+
+      if (first) {
+         byte = (unsigned char) ((c & 0x0F) << 4);
+         first = false;
+      }
+      else {
+         /* finish this byte and append to result */
+         byte |= (unsigned char)(c & 0x0F);
+         *r++ = byte;
+         first = true;
+      }
+   }
+   if (!first) {
+      /* didn't get second char - error */
+      return -2;
+   }
+
+   /* return binary length */
+   return r - bin;
+}
+
 static
 void fprintBstr(FILE* fp, const char* S, const unsigned char* A, size_t L)
 {
@@ -58,6 +121,17 @@ struct kbuf_s {
    size_t len;
 };
 typedef struct kbuf_s kbuf;
+
+void kbuf_dup(kbuf* t, const kbuf* s)
+{
+   if (t && s && s->data && s->len) {
+      t->data = malloc(s->len);
+      if (t->data) {
+         memcpy(t->data, s->data, s->len);
+         t->len = s->len;
+      }
+   }
+}
 
 /* Public key - encoded */
 struct pkbuf_s {
@@ -306,9 +380,6 @@ int
 KEMEVP_enc(ICC_CTX* ctx, kbuf* pks, kbuf* ss, const pkbuf* p_pkc, int argc, const char * argv[], enum ed encdec)
 {
    ICC_EVP_PKEY* pa = NULL;
-   const unsigned char* pp;
-   pp = p_pkc->der.data;
-   size_t len = p_pkc->der.len;
 
    pa = pubDecode(ctx, p_pkc->nid, &p_pkc->der, encdec);
    if (!pa) {
@@ -457,7 +528,7 @@ KEMEVP_dec(ICC_CTX* ctx, const skbuf* p_skc, kbuf* ss, const kbuf* p_pks, enum e
 /* Signature test function - generates keys, signs a message, and verifies the signature */
 /* return 0 for success */
 int
-PQC_KEM_test(ICC_CTX* ctx, const char* algname, int verbose, int argc, const char* argv[], enum ed encdec)
+PQC_KEM_test(ICC_CTX* ctx, const char* algname, int verbose, int argc, const char* argv[], enum ed encdec, const kbuf* pub, const kbuf* pri)
 {
    FILE* fp_rsp = stdout;
    int ret_val;
@@ -471,13 +542,32 @@ PQC_KEM_test(ICC_CTX* ctx, const char* algname, int verbose, int argc, const cha
       if (verbose) {
          printf("PQC_KEM_test: Algorithm : %s)\n", algname);
       }
-      /* Peer 1 generates the public/private keypair */
+      /* Check if keys are provided or need to be generated */
+      if (pub->data && pri->data) {
+         /* use supplied keys */
+         const int nid = ICC_OBJ_txt2nid(ctx, algname);
+         if (!nid) {
+            printf("Error: Unsupported algorithm %s\n", algname);
+            return 1;
+         }
+
+         kbuf_dup(&pk.der, pub);
+         pk.nid = nid;
+         kbuf_dup(&sk.der, pri);
+         sk.nid = nid;
+         
+         if (verbose) {
+            printf("Using provided keys\n");
+         }
+      }
+      else {
       if (verbose) {
          printf("keygen\n");
       }
       if ((ret_val = KEMEVP_gen(ctx, algname, &pk, &sk, encdec)) != 0) {
          printf("Error: KEMEVP_gen returned <%d>\n", ret_val);
          return 1;
+      }
       }
       if (verbose) {
          fprintf(fp_rsp, "pk encoding length = %d\n", (int)pk.der.len);
@@ -611,6 +701,8 @@ int main(int argc, const char* argv[])
 {
    const char* algname = NULL; 
    const char* iccPath = NULL;
+   kbuf pubKey = { 0,0, };
+   kbuf priKey = { 0,0, };
    bool isFips = false, wantFips = false, verbose = false;
    bool wantTraceCB = false; /* Trace callback */
    bool wantFipsCB = false; /* FIPS callback */
@@ -632,6 +724,8 @@ int main(int argc, const char* argv[])
             printf("     -tcb     Install a TRACE callback routine (prints message 'tcb:...')\n");
             printf("     -ed      Encode/Decode keys, pkcs=pkcs1|pkcs8\n");
             printf("     -alg     Refer following table...\n");
+            printf("     -pub     Specify public key PKCS1 encoding in hex\n");
+            printf("     -pri     Specify private key PKCS8 encoding in hex\n");
             for ( j = 1; to_KEM_ALGNAME(j); j++) {
                printf(" %d    %s\n", j, to_KEM_ALGNAME(j));
             }
@@ -668,7 +762,7 @@ int main(int argc, const char* argv[])
                encdec = pkcs1 | pkcs8;
             else {
                printf("%s: bad encoding, try -? to get help\n", arg);
-               return -1;
+               rv = -1;
             }
          }
          else if (NULL != strstr(arg, "-alg")) {
@@ -678,6 +772,18 @@ int main(int argc, const char* argv[])
          else if (NULL != strstr(arg, "-i")) {
             i++;
             iterations = atoi(argv[i]);
+         }
+         else if (0 == strcmp(arg, "-pub")) {
+            i++;
+            if (pubKey.data) free(pubKey.data);
+            pubKey.data = malloc(strlen(argv[i]) / 2);
+            pubKey.len = hex2bin(pubKey.data, argv[i], strlen(argv[i]));
+         }
+         else if (0 == strcmp(arg, "-pri")) {
+            i++;
+            if (priKey.data) free(priKey.data);
+            priKey.data = malloc(strlen(argv[i]) / 2);
+            priKey.len = hex2bin(priKey.data, argv[i], strlen(argv[i]));
          }
          else if (*arg == '-') {
             /* another setting - pass it on */
@@ -689,7 +795,7 @@ int main(int argc, const char* argv[])
             algname = to_KEM_ALGNAME(k);
             if (k == 0 || !algname) {
                printf("%s: bad argument, try -? to get help\n", arg);
-               return -1;
+               rv = -1;
             }
          }
       }
@@ -798,7 +904,7 @@ int main(int argc, const char* argv[])
        {
           size_t iteration;
           for (iteration = 0; iteration < iterations; iteration++) {
-             rv = PQC_KEM_test(icc_ctx, algname, verbose, argc - 1, argv + 1, encdec);
+             rv = PQC_KEM_test(icc_ctx, algname, verbose, argc - 1, argv + 1, encdec, &pubKey, &priKey);
              if (iterations > 1 && verbose) {
                 printf("iteration %d\n", (int)iteration);
              }
@@ -814,6 +920,10 @@ int main(int argc, const char* argv[])
        /* Clean up ICC context */
        ICC_Cleanup(icc_ctx, &status);
    }
+
+   /* Free allocated memory */
+   if (pubKey.data) free(pubKey.data);
+   if (priKey.data) free(priKey.data);
 
    return rv;
 }

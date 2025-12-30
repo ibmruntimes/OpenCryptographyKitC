@@ -41,12 +41,6 @@ ASM_OBJS = \
 	uplink-x86_64.obj \
 
 
-WIN64_AMD_VS2013_OSSLINC_DIR    = $(OSSL_DIR)/include
-
-WIN64_AMD_VS2013_BUILD_OSSL     = chmod +w b64.bat; cp  platforms/$(OPENSSL_LIBVER)/b64_VS2013.bat b64.bat; cmd /A /D /C b64.bat $(OPENSSL_VER)
-
-WIN64_AMD_VS2013_CLEAN_OSSL     = rm $(OSSL_DIR)/*.dll; rm $(OSSL_DIR)/*.ilk ; rm  $(OSSL_DIR)/*/*.obj;  rm $(OSSL_DIR)/*/*/*.obj ; rm openssl.c
-
 
 BUILD_OBJS = $(BASE_OBJS) $(ASM_OBJS) icc.res
 

@@ -3,9 +3,12 @@ ARGON2_SRC = 	Argon2/argon2.c Argon2/core.c Argon2/blake2/blake2b.c \
 
 ARGON2_CFLAGS = -I Argon2/ $(CFLAGS)
 
+# fix the stdint.h not found problem
+ifeq ($(findstring SUN, $(OPSYS)), SUN)
+ARGON2_CFLAGS += -I $(ICC_ROOT)/include/sun
+endif
+
 argon2_obj = Argon2/argon2$(OBJSUFX) Argon2/blake2b$(OBJSUFX) Argon2/thread$(OBJSUFX) Argon2/encoding$(OBJSUFX) Argon2/core$(OBJSUFX) Argon2/ref$(OBJSUFX)
-
-
 
 Argon2/argon2$(OBJSUFX): $(ICC_ROOT)/iccpkg/Argon2/Argon2.mk Argon2/argon2.c Argon2/argon2.h Argon2/encoding.h \
 			Argon2/core.h

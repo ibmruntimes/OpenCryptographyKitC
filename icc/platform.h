@@ -19,7 +19,6 @@
 extern "C" {
 #endif
 
-
 #include <string.h>
   /* This gets defined as "static" by icc.c before it includes this
      header and platform.c 

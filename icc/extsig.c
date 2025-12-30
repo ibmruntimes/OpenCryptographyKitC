@@ -442,7 +442,7 @@ static const char *MoY(int month) {
 */
 static char *TimeStamp(char *buffer) {
   SYSTEMTIME lt;
-  GetSystemTime(&lt);
+  GetLocalTime(&lt);
 
   sprintf(buffer, "%s %s %02d %02d:%02d:%2d %04d", DoW(lt.wDayOfWeek),
           MoY(lt.wMonth - 1), lt.wDay, lt.wHour, lt.wMinute, lt.wSecond,
@@ -461,12 +461,12 @@ static char *TimeStamp(char *buffer) {
 */
 static char *TimeStamp(char *buffer) {
   time_t timep;
-  struct tm tm;
+  struct tm *tm;
   time(&timep);
-  gmtime_r(&timep, &tm);
-  sprintf(buffer, "%s %s %02d %02d:%02d:%02d %04d", DoW(tm.tm_wday),
-          MoY(tm.tm_mon), tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
-          tm.tm_year + 1900);
+  tm = localtime(&timep);
+  sprintf(buffer, "%s %s %02d %02d:%02d:%02d %04d", DoW(tm->tm_wday),
+          MoY(tm->tm_mon), tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec,
+          tm->tm_year + 1900);
   buffer[24] = ' ';
   buffer[25] = '\0';
   return buffer;

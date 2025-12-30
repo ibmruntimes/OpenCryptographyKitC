@@ -87,6 +87,7 @@
 #include <time.h>
 #define TRACE_CODE 1
 #include "tracer.h"
+#include "icc_cdefs.h"
 
 static int ok_status(ICC_STATUS *status);
 static int default_status(ICC_STATUS *status);
@@ -170,7 +171,7 @@ static int hasN = 1; /*!< Used to enable/disable the N/ (Non-FIPS) tree */
 #if defined(GETVALUE_HACK)
 #  if defined(_WIN32)
 static int fips_is_init = 0;
-static wchar_t mypath[ICC_VALUESIZE];
+/*static wchar_t mypath[ICC_VALUESIZE];*/
 #  endif /* _WIN32 */
 /* 
    Nasty hack to fix a flaw in wide character path handling in the FIPS ICC
@@ -923,6 +924,33 @@ int ICC_LINKAGE ICC_Attach(ICC_CTX *pcb,ICC_STATUS* status)
       rv = default_status(status);
     }
   }
+
+    /* Trace in case of symbol clashing issues */
+    {
+    int j = 0;
+    char* cptr;
+    PFI fptr;
+    char buf[64];
+    ICC_CTX* module[2] = {wctx->Cctx, wctx->Nctx};
+    char* fipsness;
+
+    int i;
+    for (i=0;i<2;i++) {
+      if (module[i] != NULL) {
+          fipsness = (i == 0) ? "FIPS" : "non-FIPS";
+          MARK("Begin function table,", fipsness);
+          do {
+            cptr = (*module[i]->funcs)[j].name;
+            fptr = (*module[i]->funcs)[j].func;
+            snprintf(buf, sizeof(buf), "%p", (void*)fptr);
+            MARK(cptr, buf);
+            j++;
+          } while ((*module[i]->funcs)[j].name != NULL);
+
+          MARK("End function table", "");
+      }
+    }
+  }
   OUTRC(rv);
 
   return rv;
@@ -1083,6 +1111,19 @@ int gskiccs8_path(char *returned_path, int path_len) {
   int rv = 0;
   rv = FUNCTION_NAME(MYNAME, _path)(returned_path, path_len);
   return rv;
+}
+
+#if defined (JGSK_WRAP)
+#define ICC_gskiccs_path JCC_gskiccs_path
+#endif
+#if defined(ICKC_WRAP)
+#define ICC_gskiccs_path ICKC_gskiccs_path
+#endif
+int ICC_gskiccs_path(char* returned_path, int path_len)
+{
+   int rv = 0;
+   rv = FUNCTION_NAME(MYNAME, _path)(returned_path, path_len);
+   return rv;
 }
 
 #if defined(_WIN32)

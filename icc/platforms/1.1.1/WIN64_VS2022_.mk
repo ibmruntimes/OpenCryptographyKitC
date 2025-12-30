@@ -41,14 +41,6 @@ ASM_OBJS = \
 	uplink-x86_64.obj \
 
 
-# For the .bat file to work we need to be running a cmd processor, not cygmin.
-# alternative is to convert b64_VS2022.bat to .sh which will run on either.
-# OPENSSL build wants to run on CMD
-
-WIN64_VS2022_OSSLINC_DIR    = $(OSSL_DIR)/include
-WIN64_VS2022_BUILD_OSSL     = platforms\$(OPENSSL_LIBVER)\b64_VS2022.bat $(OPENSSL_VER) $(OPENSSL_$(CONFIG)_FLAG)
-WIN64_VS2022_CLEAN_OSSL     = rm $(OSSL_DIR)/*.dll; rm $(OSSL_DIR)/*.ilk ; rm $(OSSL_DIR)/*/*.obj ; rm $(OSSL_DIR)/*/*/*.obj ; find . -name \*.obj -type f -delete ; rm openssl.c
-
 
 BUILD_OBJS = $(BASE_OBJS) $(ASM_OBJS) icc.res
 
@@ -181,6 +173,7 @@ WIN64_AMD_CRYPTOOBJ= \
 	$(OBJ_D)/bn_shift.obj $(OBJ_D)/bn_word.obj $(OBJ_D)/bn_blind.obj \
 	$(OBJ_D)/bn_kron.obj $(OBJ_D)/bn_sqrt.obj $(OBJ_D)/bn_gcd.obj \
 	$(OBJ_D)/bn_prime.obj $(OBJ_D)/bn_err.obj $(OBJ_D)/bn_sqr.obj \
+	$(OBJ_D)/bn_rsa_fips186_4$(OBJSUFX) \
 	$(OBJ_D)/bn_asm.obj $(OBJ_D)/x86_64-mont.obj $(OBJ_D)/x86_64-mont5.obj \
 	$(OBJ_D)/x86_64-gf2m.obj $(OBJ_D)/rsaz_exp.obj $(OBJ_D)/rsaz-x86_64.obj \
 	$(OBJ_D)/rsaz-avx2.obj $(OBJ_D)/bn_recp.obj $(OBJ_D)/bn_mont.obj \
@@ -194,6 +187,7 @@ WIN64_AMD_CRYPTOOBJ= \
 	$(OBJ_D)/rsa_asn1.obj $(OBJ_D)/rsa_depr.obj $(OBJ_D)/rsa_ameth.obj \
 	$(OBJ_D)/rsa_prn.obj $(OBJ_D)/rsa_pmeth.obj $(OBJ_D)/rsa_crpt.obj \
 	$(OBJ_D)/rsa_x931g.obj $(OBJ_D)/dsa_gen.obj $(OBJ_D)/dsa_key.obj \
+	$(OBJ_D)/rsa_sp800_56b_check$(OBJSUFX) $(OBJ_D)/rsa_sp800_56b_gen$(OBJSUFX) \
 	$(OBJ_D)/dsa_lib.obj $(OBJ_D)/dsa_asn1.obj $(OBJ_D)/dsa_vrf.obj \
 	$(OBJ_D)/dsa_sign.obj $(OBJ_D)/dsa_err.obj $(OBJ_D)/dsa_ossl.obj \
 	$(OBJ_D)/dsa_depr.obj $(OBJ_D)/dsa_ameth.obj $(OBJ_D)/dsa_pmeth.obj \

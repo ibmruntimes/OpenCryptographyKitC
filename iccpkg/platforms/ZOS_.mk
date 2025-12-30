@@ -42,8 +42,8 @@ $(GSK_LIBNAME): $(GSK_SDK) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 	$(CP) $(GSKLIB_B)_64.x $(GSK_SDK)/
 	$(STRIP) $@
 
-
 ifneq ($(strip $(MUPPET)),)
+# MUPPET lib is present if there is a FIPS module - the object is the ICCC_ APIs
 OLD_ICC_OBJ=icc$(OBJSUFX)
 OLD_ICC_OBJ_AR=$(AR) x $(MUPPET) $(OLD_ICC_OBJ)
 OLD_ICC_OBJ_CLEAN=$(RM) $(OLD_ICC_OBJ)
@@ -77,7 +77,7 @@ $(JGSK_LIBNAME): $(JGSK_SDK) $(JGSK_DIR) jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
 	$(STRIP) $@
 
 # ICKC
-$(ICKC_LIBNAME): $(ICKC_SDK) $(ICKC_DIR) ickc_wrap2$(OBJSUFX) \
+$(ICKC_LIBNAME): $(GSK_DIR) $(GSK_SDK) ickc_wrap2$(OBJSUFX) \
 		$(ICKCTIMER_OBJS) ../icc/csvquery_64.o \
 		$(ZICCOBJ) $(MUPPET) \
 		$(ZLIB_LIB)
@@ -88,7 +88,7 @@ $(ICKC_LIBNAME): $(ICKC_SDK) $(ICKC_DIR) ickc_wrap2$(OBJSUFX) \
 		$(ZICCOBJ) $(MUPPET) \
 		$(ZLIB_LIB) \
 		$(LDLIBS)
-	$(CP) $(ICKCLIB_B)_64.x $(ICKC_SDK)/
+	$(CP) $(ICKCLIB_B)_64.x $(GSK_SDK)/
 	$(STRIP) $@
 
 cache_test$(EXESUFX): cache_test$(OBJSUFX) exp$(OBJSUFX) \
@@ -98,4 +98,3 @@ cache_test$(EXESUFX): cache_test$(OBJSUFX) exp$(OBJSUFX) \
 		$(TIMER_OBJS) $(ZICCOBJ) $(MUPPET)   \
 		$(STKPK11) $(ZLIB_LIB) \
 		$(LDLIBS) $(OUT) $@
-		

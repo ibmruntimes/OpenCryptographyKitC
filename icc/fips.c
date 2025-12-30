@@ -61,10 +61,11 @@ struct DSA_SIG_st {
 #if defined(KNOWN)
 
 static void GenerateKAData(ICClib *iccLib,ICC_STATUS *stat);
-void iccPrintBytes(unsigned char bytes[], int len);
 
 #endif 
 
+/* may also use this for debugging */
+void iccPrintBytes(unsigned char bytes[], int len);
 
 /** @brief return text for a detected buffer overrun */
 static const char*  ICC_MEMORY_OVERRUN = "Data corruption";
@@ -575,7 +576,25 @@ static const unsigned char RSA_PSS_sig_broken[] = {
   0x90,0x06,0xF4,0x2D,0x4B,0x30,0xC3,0x48,0xFF,0x11,0x89,0x2B,0x11,0xD3,0xB3,0x3E,
   0xBD,0x6C,0x5F,0xA2,0x4F,0x32,0xEF,0x57,0x19,0x11,0xFD,0xD9,0x6C,0x3C,0x50,0x54,
   0xD6,0x40,0x90,0x9E,0x4C,0x1F,0x31,0xCE,0xDA,0x3F,0x3A,0x5A,0x15,0xAB,0xEC,0xCC,
-  0x3B,0xDD,0xC3,0x37,0x31,0x7E,0x7B,0xD4,0xBA,0xE6,0x93,0x7C,0xED,0x4D,0xA4,0x78,  
+  0x3B,0xDD,0xC3,0x37,0x31,0x7E,0x7B,0xD4,0xBA,0xE6,0x93,0x7C,0xED,0x4D,0xA4,0x78
+};
+static const unsigned char RSA_OAEP_enc[] = {
+   0x12,0x90,0x77,0xA9,0xEE,0x2D,0xD2,0x82,0xEF,0x56,0x12,0xE7,0xCD,0xC5,0x04,0x40,
+   0x7A,0x36,0x99,0x6E,0x68,0x2A,0x9E,0x6E,0x53,0x72,0xDB,0x27,0x4F,0x31,0xF9,0xFC,
+   0x2D,0x12,0x0B,0x54,0xA1,0xF1,0x56,0xBE,0x24,0xAD,0x84,0x04,0x36,0x2C,0x89,0x5C,
+   0x3F,0xCD,0x36,0x15,0x61,0xC9,0x87,0x9D,0x2E,0x69,0xB2,0x8A,0x8E,0x39,0xE7,0x60,
+   0xE8,0x83,0x2D,0xD8,0xA7,0x48,0x5E,0xBF,0x1A,0x53,0xEA,0x62,0x53,0x4E,0x30,0x1E,
+   0x4F,0x5E,0x78,0x67,0x3E,0xCC,0x9D,0xAC,0x6C,0xB1,0x59,0xCA,0xFC,0x24,0xA2,0xFC,
+   0xD7,0x7A,0x94,0x46,0x02,0xC9,0x95,0xBB,0xE3,0x0C,0x50,0xF2,0xA2,0x19,0x0E,0xDC,
+   0xE0,0x88,0x11,0x9A,0xB6,0x10,0xEE,0x0F,0x0F,0x45,0xE2,0x79,0x0E,0xF2,0x30,0x21,
+   0x73,0xF7,0xAE,0xD5,0xAE,0xBB,0x6E,0x68,0x22,0xF0,0xA3,0x0A,0x76,0x74,0x11,0xB7,
+   0x71,0x9F,0x02,0xB0,0x91,0xE0,0x2C,0xD1,0x31,0x2C,0xFC,0xA8,0x56,0xD2,0x31,0xD6,
+   0xE3,0xE2,0xBC,0xAF,0x9F,0x64,0x7B,0xA5,0x7B,0x5C,0xE9,0xC4,0x37,0xDB,0x48,0x86,
+   0x1F,0x58,0xBE,0x1C,0xCD,0x10,0xE7,0xE7,0x02,0x8B,0x2D,0x94,0x4A,0x05,0x2F,0xBA,
+   0xBF,0x6D,0xBA,0x05,0x71,0xE1,0xDE,0xFE,0x65,0x27,0x68,0xBE,0xFB,0xCC,0xC9,0x5A,
+   0xC8,0x30,0x8C,0x06,0x96,0x4B,0xC2,0xB2,0x29,0xB3,0x38,0x4B,0xDA,0x6B,0x89,0xC2,
+   0xF5,0xC5,0x2E,0x67,0x59,0x17,0x32,0x22,0x74,0x88,0x83,0x74,0xF3,0x93,0xF9,0x04,
+   0x95,0x5C,0xBE,0x94,0x5D,0x30,0x23,0x09,0x63,0x49,0xBB,0xC8,0xAF,0x77,0x33,0x74
 };
 
 /** \known Data: (rsa_privK_ka) RSA encrypt output */
@@ -597,25 +616,6 @@ static const unsigned char rsa_privK_ka[] =
         0x71, 0x8D, 0x13, 0x84, 0xF9, 0xCB, 0x85, 0xF4, 0xBE, 0x97, 0x04, 0x37, 0xD0, 0x9F, 0x02, 0x38,
         0x40, 0xDC, 0x87, 0x11, 0x42, 0x3B, 0xB5, 0x06, 0x52, 0xF2, 0xFD, 0xCD, 0x20, 0x59, 0x71, 0x8A,
         0x4B, 0x1F, 0x3D, 0x75, 0xB5, 0x98, 0xE3, 0xD5, 0x32, 0x40, 0x8A, 0x88, 0xCC, 0x65, 0xFB, 0xAB};
-/** \known Data: (rsa_pubK_ka) RSA decrypt output */
-static const unsigned char rsa_pubK_ka[]=
-  {   0xAE,0xC9,0x81,0x7F,0xCF,0x9B,0x5B,0x52,
-      0x37,0x54,0xD4,0x6A,0xA4,0x9F,0x83,0x16,
-      0x46,0xDF,0x03,0xEB,0xB8,0xA3,0x8A,0xC4,
-      0xB2,0x99,0x45,0x51,0x5A,0x50,0x55,0xCA,
-      0x56,0xFD,0xFB,0x94,0x65,0x1E,0x87,0xC0,
-      0xB1,0x51,0xD7,0x26,0xB8,0xE3,0x06,0x4D,
-      0x6C,0x14,0x13,0x67,0x12,0x0B,0x66,0x36,
-      0x35,0x00,0x74,0xEC,0x74,0x38,0x67,0xC0,
-      0x76,0x65,0xEB,0xE6,0xC2,0x61,0x1E,0x67,
-      0x49,0x56,0x16,0x25,0x0E,0xFB,0x2B,0xC2,
-      0xDB,0xB3,0x0C,0x8E,0xBD,0x45,0x5F,0xE5,
-      0x7E,0x42,0xA1,0x9A,0x55,0xC4,0xFD,0x6F,
-      0x43,0xA0,0x29,0xBD,0x84,0xE1,0xB0,0xF6,
-      0x49,0x1C,0x33,0x8D,0x61,0xD9,0x42,0x72,
-      0xB2,0xC8,0x4C,0x12,0x8B,0xAD,0xDB,0x38,
-      0x0B,0xB1,0x81,0x5C,0x58,0xC9,0xD4,0xD1
-  };
   
 /** \known Data: (aes_ka) AES-256 output */
 static const unsigned char aes_ka[]=
@@ -1405,30 +1405,33 @@ static int GenerateSig(ICC_STATUS *stat,EVP_PKEY *pkey,unsigned char *sig,size_t
     md = EVP_get_digestbyname("SHA256");
   }
   rc = EVP_DigestSignInit(md_ctx,&pctx,md,NULL,pkey);
+  if (1 == rc) {
   switch(flags) {
-
     case RSA_PKCS1_PADDING:
-      EVP_PKEY_CTX_set_rsa_padding(pctx,RSA_PKCS1_PADDING);
+        rc = EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING);
     break;
     case RSA_PKCS1_PSS_PADDING:
-      EVP_PKEY_CTX_set_rsa_padding(pctx,RSA_PKCS1_PSS_PADDING);
-      EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, RSA_PSS_SALTLEN_AUTO);
-      EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md(pctx,md);
+        rc = EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING);
+        if (1 == rc) rc = EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, RSA_PSS_SALTLEN_AUTO);
+        if (1 == rc) /*rc =*/ EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md(pctx, md);
     break;  
     default:
     break;
   }
+  }
   if(1 == rc) {
-    EVP_SignUpdate(md_ctx,in,sizeof(in));
-    rc = EVP_DigestSignFinal(md_ctx,sig,sigL);
+    rc = EVP_SignUpdate(md_ctx,in,sizeof(in));
+    if (1 == rc) rc = EVP_DigestSignFinal(md_ctx,sig,sigL);
   }
   EVP_MD_CTX_free(md_ctx);
   if(1 != rc) {
+#if 0
     int errc = 0;
     char* errs = (char *)malloc(120);
     errc = ERR_get_error();
     ERR_error_string(errc, errs);
     fprintf(stderr, "GenerateSig: %s\n", errs);
+#endif
     SetStatusLn2(NULL,stat,FATAL_ERROR,ICC_LIBRARY_VERIFICATION_FAILED,msg,"Signature generation failed",__FILE__,__LINE__);
   }
   OUTRC(stat->majRC);
@@ -1467,6 +1470,11 @@ static int VerifySig(ICC_STATUS *stat,EVP_PKEY *pkey,const unsigned char *sig,si
   }
   md_ctx = EVP_MD_CTX_new();
   md = EVP_get_digestbyname("SHA256");
+  if (!md) {
+     /* failure */
+     rc = -1;
+  }
+  else {
   rc = EVP_DigestVerifyInit(md_ctx,&pctx,md,NULL,pkey);
     switch(flags) {
     case RSA_PKCS1_PADDING:
@@ -1475,8 +1483,12 @@ static int VerifySig(ICC_STATUS *stat,EVP_PKEY *pkey,const unsigned char *sig,si
     case RSA_PKCS1_PSS_PADDING:
       EVP_PKEY_CTX_set_rsa_padding(pctx,RSA_PKCS1_PSS_PADDING);
     break;  
+     case RSA_PKCS1_OAEP_PADDING:
+        EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_OAEP_PADDING);
+        break;
     default:
     break;
+  }
   }
   if(1 == rc) {
     EVP_SignUpdate(md_ctx,tmp,sizeof(in));
@@ -1901,6 +1913,13 @@ static int iccCheckKnownAnswer(
         rv = SetStatusMem(NULL, icc_stat, __FILE__, __LINE__);
     }
   }
+#if 0
+  /* enable to get bytes to update KAT */
+  if (rv) {
+     printf("no match iccCheckKnownAnswer:\n");
+     iccPrintBytes(in, inL);
+  }
+#endif
   memset(buf,0,sizeof(buf));
   OUTRC(rv);
   return rv;
@@ -1915,7 +1934,8 @@ int iccDHTest(ICC_STATUS *icc_stat)
   unsigned char *pub_key_bin = NULL;
   int len;
   BIGNUM *p = NULL,*g = NULL,*priv_key = NULL;
-  const BIGNUM *pub_key = NULL;
+  BIGNUM *pub_key = NULL;
+  const BIGNUM* cpub_key = NULL;
   unsigned char *shared_secret = NULL;
   unsigned char *ptr_p = (unsigned char *)dh_test_2048_p;
   unsigned char ibuf[sizeof(dh_test_2048_p)];
@@ -1950,14 +1970,14 @@ int iccDHTest(ICC_STATUS *icc_stat)
     DH_set0_key(dh, pub_key, priv_key);
   }
   if(ICC_OK == icc_stat->majRC) {
-    pub_key = DH_get0_pub_key(dh); 
-    len = BN_num_bytes(pub_key);  
+    cpub_key = DH_get0_pub_key(dh);
+    len = BN_num_bytes(cpub_key);
     if ((pub_key_bin = OPENSSL_malloc(len)) == NULL) {
       SetStatusMem(NULL,icc_stat,__FILE__,__LINE__);
     }
   }
   if(ICC_OK == icc_stat->majRC) {
-    BN_bn2bin(pub_key, pub_key_bin);
+    BN_bn2bin(cpub_key, pub_key_bin);
     iccCheckKnownAnswer(pub_key_bin,len,dh_test_2048_pub_key,sizeof(dh_test_2048_pub_key),icc_stat,__FILE__,__LINE__,"FFDHE","Public key");
   }
 
@@ -1970,7 +1990,7 @@ int iccDHTest(ICC_STATUS *icc_stat)
   }
   if(ICC_OK == icc_stat->majRC) {  
      MARK("iccDHTest", "DH_compute_key");
-     if ((len = DH_compute_key(shared_secret,pub_key, dh)) == -1) {
+     if ((len = DH_compute_key(shared_secret,cpub_key, dh)) == -1) {
       SetStatusLn(NULL,icc_stat,FATAL_ERROR,ICC_LIBRARY_VERIFICATION_FAILED,"FFDHE DH_compute_key() failed",__FILE__,__LINE__);
     }
   }
@@ -2014,11 +2034,17 @@ static int iccTestTLS_KDF(ICC_STATUS *stat,const EVP_MD *digest, unsigned char *
   IN();
   kctx = EVP_PKEY_CTX_new_id(EVP_PKEY_TLS1_PRF,NULL);
   if(NULL != kctx) {
-    (void)EVP_PKEY_derive_init(kctx);
-    (void)EVP_PKEY_CTX_ctrl(kctx,-1,EVP_PKEY_OP_DERIVE, EVP_PKEY_CTRL_TLS_MD,0,(void *)digest);
-    (void)EVP_PKEY_CTX_ctrl(kctx,-1,EVP_PKEY_OP_DERIVE, EVP_PKEY_CTRL_TLS_SECRET,seclen,(void *)secret);
-    (void)EVP_PKEY_CTX_ctrl(kctx,-1,EVP_PKEY_OP_DERIVE, EVP_PKEY_CTRL_TLS_SEED,seedlen,(void *)seed);
-    (void)EVP_PKEY_derive(kctx, out, &outlen);
+     int rc = 0;
+     rc = EVP_PKEY_derive_init(kctx);
+     if (rc != 1) { MARK("iccTestTLS_KDF", "EVP_PKEY_derive_init"); OUTRC(rc); }
+     rc = EVP_PKEY_CTX_ctrl(kctx,-1,EVP_PKEY_OP_DERIVE, EVP_PKEY_CTRL_TLS_MD,0,(void *)digest);
+     if (rc != 1) { MARK("EVP_PKEY_CTX_ctrl", "EVP_PKEY_CTRL_TLS_MD"); OUTRC(rc); }
+     rc = EVP_PKEY_CTX_ctrl(kctx,-1,EVP_PKEY_OP_DERIVE, EVP_PKEY_CTRL_TLS_SECRET,seclen,(void *)secret);
+     if (rc != 1) { MARK("EVP_PKEY_CTX_ctrl", "EVP_PKEY_CTRL_TLS_SECRET"); OUTRC(rc); }
+     rc = EVP_PKEY_CTX_ctrl(kctx,-1,EVP_PKEY_OP_DERIVE, EVP_PKEY_CTRL_TLS_SEED,seedlen,(void *)seed);
+     if (rc != 1) { MARK("EVP_PKEY_CTX_ctrl", "EVP_PKEY_CTRL_TLS_SEED"); OUTRC(rc); }
+     rc = EVP_PKEY_derive(kctx, out, &outlen);
+     if (rc != 1) { MARK("iccTestTLS_KDF", "EVP_PKEY_derive"); OUTRC(rc); }
     EVP_PKEY_CTX_free(kctx);
     iccCheckKnownAnswer(out,explen,expected,explen,stat,__FILE__,__LINE__,"TLS KDF",""); 
   }
@@ -3068,7 +3094,6 @@ static int KATest(ICC_STATUS *stat,EVP_PKEY *pkey, const unsigned char *sig,size
     @return ICC_OK or ICC_ERROR
     @note  This is only usable with a broken RNG.
     We verify sig, then sign and check we get the same answer
-    
 */ 
 static int KATest_broken(ICC_STATUS *stat,EVP_PKEY *pkey, const unsigned char *sig,size_t outL,unsigned int flags,const char *msg,int error)
 { 
@@ -3102,18 +3127,16 @@ static int KATest_broken(ICC_STATUS *stat,EVP_PKEY *pkey, const unsigned char *s
     @param padding padding type
     @param in input data
     @param inL input data length
-    @param privKAB buffer for private key encrypt output
-    @param privKAL length of buffer for private key encrypt output
-    @param pubKAB  buffer for public key decrypt output
-    @param pubKAL  length of buffer for public key decrypt output
+    @param KAB buffer for private key encrypt output
+    @param KAL length of buffer for private key encrypt output
     @param icc_stat error status  
     \known RSA encrypt/decrypt
 */
 
 static void iccRSACipherTest(ICClib *iccLib, RSA *rsa, int padding,
+                             int encWithPrivate, /* 1 = encrypt with private, 0 = encrypt with public */
                              const unsigned char *in, int inL,
-                             const unsigned char *privKAB, int privKAL,
-                             const unsigned char *pubKAB, int pubKAL,
+                             const unsigned char *KAB, int KAL,
                              ICC_STATUS *icc_stat) {
   unsigned char *outEncrypted = NULL;
   unsigned char *outDecrypted = NULL;
@@ -3140,11 +3163,20 @@ static void iccRSACipherTest(ICClib *iccLib, RSA *rsa, int padding,
   }
 
   if (ICC_ERROR != rv) {
+     if (encWithPrivate) {
     evpRC = RSA_private_encrypt(inL, in, outEncrypted, rsa, padding);
     if (evpRC < 0) {
       OpenSSLError(iccLib, icc_stat, __FILE__, __LINE__);
       rv = ICC_ERROR;
     }
+  }
+     else {
+        evpRC = RSA_public_encrypt(inL, in, outEncrypted, rsa, padding);
+        if (evpRC < 0) {
+           OpenSSLError(iccLib, icc_stat, __FILE__, __LINE__);
+           rv = ICC_ERROR;
+        }
+     }
   }
 #if defined(KNOWN)
   printf("RSA Encrypt known answer\n");
@@ -3165,14 +3197,18 @@ static void iccRSACipherTest(ICClib *iccLib, RSA *rsa, int padding,
     } else {
       /* make sure known answer from private encrypt is correct  */
       rv =
-	        iccCheckKnownAnswer(outEncrypted, outEncL, privKAB, privKAL, icc_stat,
+	        iccCheckKnownAnswer(outEncrypted, outEncL, KAB, KAL, icc_stat,
 			    __FILE__, __LINE__, "RSA", "Private encrypt");
     }
   }
   if (ICC_ERROR != rv) {
     /* initialize for decryption               */
-    evpRC =
-      RSA_public_decrypt(outEncL, outEncrypted, outDecrypted, rsa, padding);
+     if (encWithPrivate) {
+        evpRC = RSA_public_decrypt(outEncL, outEncrypted, outDecrypted, rsa, padding);
+     }
+     else {
+        evpRC = RSA_private_decrypt(outEncL, outEncrypted, outDecrypted, rsa, padding);
+     }
     /* make sure decrypted data is the same as the original*/
     if (evpRC < 0) {
       OpenSSLError(iccLib, icc_stat, __FILE__, __LINE__);
@@ -4137,7 +4173,7 @@ static int DoVeryBrokenTests(ICClib *pcb, ICC_STATUS *stat)
   const unsigned char *tmp = NULL;
   RAND_METHOD *rngICCRand = NULL;
   int runECtest = 1;
-  /*return (stat->majRC);*/
+
   IN();
   rngICCRand = RAND_FIPS();
   MARK("Install broken RNG - required for FIPS compliance","Only used during POST");
@@ -4152,6 +4188,8 @@ static int DoVeryBrokenTests(ICClib *pcb, ICC_STATUS *stat)
   iccGenerateRSASig(stat,RSA_key,sizeof(RSA_key),RSA_PKCS1_PADDING);
   printf("RSA-PSS\n");
   iccGenerateRSASig(stat,RSA_key,sizeof(RSA_key),RSA_PKCS1_PSS_PADDING);
+  printf("RSA-OAEP\n");
+  iccGenerateRSASig(stat, RSA_key, sizeof(RSA_key), RSA_PKCS1_OAEP_PADDING);
   printf("EC_key_P384\n");
   iccGenerateECDSASig(stat,EC_key_P384,sizeof(EC_key_P384),0,"P-384");
   printf("EC_key_B233\n");
@@ -4199,6 +4237,17 @@ static int DoVeryBrokenTests(ICClib *pcb, ICC_STATUS *stat)
       EVP_PKEY_free(pkey);
       RSA_free(rsa);
       rsa = NULL;
+    }
+    if (ICC_OK == stat->majRC)
+    {
+       int encWithPrivate = 0;
+       MARK("Broken RNG", "RSA-OAEP");
+       /* OAEP padding */
+       tmp = RSA_key;
+       d2i_RSAPrivateKey(&rsa, &tmp, sizeof(RSA_key));
+       iccRSACipherTest(pcb, rsa, RSA_PKCS1_OAEP_PADDING, encWithPrivate,
+          in, sizeof(in), RSA_OAEP_enc, sizeof(RSA_OAEP_enc),
+          stat);
     }
     /* Tests that won't pass on Z because the Z hardware paths add their own nonce to EC signatures
       It is fixable, but there's a performance hit, hence this mess
@@ -4623,10 +4672,11 @@ void iccDoKnownAnswer(ICClib * iccLib, ICC_STATUS * icc_stat) {
    * outputs */
     if (ICC_OK == icc_stat->majRC)
     {
+       int encWithPrivate = 1;
       tmp = RSA_key;
       d2i_RSAPrivateKey(&rsaKey, &tmp, sizeof(RSA_key));
-      iccRSACipherTest(iccLib, rsaKey, 1, in, sizeof(in), rsa_privK_ka,
-                       sizeof(rsa_privK_ka), rsa_pubK_ka, sizeof(rsa_pubK_ka),
+       iccRSACipherTest(iccLib, rsaKey, 1, encWithPrivate,
+          in, sizeof(in), rsa_privK_ka, sizeof(rsa_privK_ka),
                        icc_stat);
     }
 
@@ -5089,7 +5139,7 @@ EVP_PKEY *get_pubkey(ICC_STATUS *stat) {
     }
     if (NULL == rsaPKey) {
       SetStatusLn(NULL, stat, FATAL_ERROR, ICC_LIBRARY_VERIFICATION_FAILED,
-                  "Could not parse RSA key, memory corruption ?", __FILE__,
+                  "Could not parse RSA public key (pubkey.h), memory corruption ?", __FILE__,
                   __LINE__);
     }
   }

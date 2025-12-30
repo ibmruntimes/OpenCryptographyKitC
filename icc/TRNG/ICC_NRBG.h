@@ -13,6 +13,7 @@
 *************************************************************************/
 
 
+
 #ifndef ICC_NRBG_H
 #define ICC_NRBG_H
 #include "entropy_estimator.h"

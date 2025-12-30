@@ -18,12 +18,6 @@ ASM_OBJS = dso_win32.obj rand_win.obj \
 
 #chacha-x86.obj - fixme. Disabled because the assmblers on most platforms choke
 
-WIN32_OSSLINC_DIR    = $(OSSL_DIR)/include
-
-WIN32_BUILD_OSSL     = chmod +w b32.bat; cp platforms/$(OPENSSL_LIBVER)/b32.bat .; cmd /A /D /C b32.bat $(OPENSSL_VER)
-
-WIN32_CLEAN_OSSL     = rm $(OSSL_DIR)/*.dll; rm $(OSSL_DIR)/*.ilk ; rm  $(OSSL_DIR)/*/*.obj;  rm $(OSSL_DIR)/*/*/*.obj ; rm openssl.c
-
 BUILD_OBJS = $(BASE_OBJS) $(ASM_OBJS) 
 
 #opensslrc.RES

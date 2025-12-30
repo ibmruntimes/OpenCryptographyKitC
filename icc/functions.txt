@@ -3730,6 +3730,87 @@ required buffer size. ;
 0abcd int RSA_FixEncodingZeros(RSA* pri, const RSA* pub, int allowDisableBlinding);
 
 #;
+#! @brief Set the key components (n, e, d) of an RSA object;
+#!        This function assigns the modulus (n), public exponent (e), and private exponent (d);
+#!        to an RSA structure. Ownership of the BIGNUMs is transferred to the RSA object—;
+#!        they should not be freed by the caller after this function succeeds.;
+#!
+#! @param r  Pointer to an RSA structure to set the key for.;
+#! @param n  Pointer to the modulus (BIGNUM). May be NULL if already set.;
+#! @param e  Pointer to the public exponent (BIGNUM). May be NULL if already set.;
+#! @param d  Pointer to the private exponent (BIGNUM). May be NULL if already set.;
+#!
+#! @return 1 on success, 0 on failure.;
+	
+0abcd int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
+
+#;
+#! @brief Retrieve the key components (n, e, d) from an RSA object.;
+#!        This function returns pointers to the internal BIGNUMs that represent;
+#!        the RSA modulus, public exponent, and private exponent.;
+#!
+#! @param r  Pointer to the RSA structure.;
+#! @param n  Address of a pointer that will receive the modulus (n);
+#!           or NULL if not needed.;
+#! @param e  Address of a pointer that will receive the public exponent (e);
+#!           or NULL if not needed.;
+#! @param d  Address of a pointer that will receive the private exponent (d);
+#!           or NULL if not needed.;
+#!
+#! @return This function does not return a value.;
+
+0abcd void RSA_get0_key(const RSA *r, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d);
+
+#;
+#! @brief Print an RSA key in human-readable form to a file.;
+#!        This function prints the RSA key parameters modulus, public exponent, etc;
+#!        to the specified file stream in a readable format;
+#!
+#! @param fp      File pointer to which the RSA key will be printed.;
+#! @param x       Pointer to the RSA structure to print.;
+#! @param offset  Number of spaces to indent each line of output.;
+#!
+#! @return 1 on success, 0 on failure.;
+#!
+#! @note This function is typically used for debugging or inspection purposes,;
+#!       not for secure serialization of keys.;
+
+0abcd int RSA_print_fp(FILE *fp, RSA *x, int offset);
+
+#;
+#! @brief Set the prime factors p and q of an RSA object.;
+#!        This function transfers ownership of the provided BIGNUM values to the RSA object.;
+#!        If factors were previously set, they will be freed by the RSA structure.;
+#!        Both p and q must be non-NULL for the operation to succeed.;
+#!
+#! @param r Pointer to the RSA object whose factors will be updated.;
+#! @param p Pointer to the first prime factor.;
+#! @param q Pointer to the second prime factor.;
+#!
+#! @return 1 on success, 0 on failure.;
+#!
+#! @note After a successful call, the caller must not free p or q, as they are now;
+#! managed by the RSA object.;
+
+0abcd int RSA_set0_factors(RSA *r, BIGNUM *p, BIGNUM *q);
+
+#;
+#! @brief Retrieve the prime factors p and q from an RSA object.;
+#!        This function provides read-only access to the internal BIGNUM values.;
+#!        The returned pointers remain owned by the RSA object and must not be freed.;
+#!
+#! @param r Pointer to the RSA object from which the factors will be retrieved.;
+#! @param p Address of a pointer that will receive the first prime factor (may be NULL).;
+#! @param q Address of a pointer that will receive the second prime factor (may be NULL).;
+#!
+#! @return void;
+#!
+#! @note The returned BIGNUM pointers are internal to the RSA object and must not be;
+#!       modified or freed by the caller.;
+
+0abcd void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q);
+
+#;
 #! @brief Run the internal FIPS integrity check ;
 #! @param status pointer to an ICC_STATUS structure ;
 #! @return ICC_OK, ICC_ERROR, ICC_WARNING ;

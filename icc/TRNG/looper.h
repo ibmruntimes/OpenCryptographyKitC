@@ -5,8 +5,6 @@
 // this file except in compliance with the License. You can obtain a copy
 // in the file LICENSE in the source distribution.
 *************************************************************************/
-
-
 #if !defined(LOOPER_DEFINED)
 #define LOOPER_DEFINED
 int looper(volatile int *i,volatile int *j);

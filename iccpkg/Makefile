@@ -29,6 +29,12 @@ include gsk_crypto.mk
 ## Build specific definitions - file target etc.
 include iccpkg.mk
 
+.SUFFIXES:
+%.mk:
+	# no recipe - disabled
+Makefile:
+	# no recipe - disabled
+
 developer_CFLAGS = -DVTAG=$(VTAG) -DINSTDIR=\""$(GSK_GLOBAL)"\"
 OFFICIAL_CFLAGS = -DICC_OFFICIAL_BUILD $(developer_CFLAGS)
 
@@ -40,9 +46,6 @@ ICCLIB		= $(STLPRFX)icc$(STLSUFX)
 PACKAGE_DIR    = $(ICC_ROOT)/package
 RTE_DIR        = $(PACKAGE_DIR)/icc
 SDK_DIR        = $(PACKAGE_DIR)/iccsdk
-
-# platforms/*.mk are still using this alias
-NEW_ICC = $(PACKAGE_DIR)
 
 ZLIB_LIB 	= $(ICC_ROOT)/icc/$(STLPRFX)zlib$(STLSUFX)
 
@@ -59,12 +62,6 @@ else
    MYICC = icc
 endif		
 
-# local alias directory names - deprecated and only used in this Makefile
-# These are the runtime directories (package/*gskit_crypto/)
-INST_DIR	= $(GSK_DIR)
-JINST_DIR   = $(JGSK_DIR)
-
-
 # Sign tool for Microsoft Authenticode
 ifeq ($(findstring VS2022, $(OPSYS)), VS2022)
 SIGN_COMMAND = ../../signwindowsfile.ksh
@@ -80,9 +77,6 @@ JICC_PERF	= $(JGSK_SDK)/bin/jicc_perf$(EXESUFX)
 
 # PKCS#11 perf tool
 PK11_PERF	= $(GSK_SDK)/pkcs11_thread$(EXESUFX)
-
-#Random number generator
-GSK_RNG 	= $(GSK_SDK)/GenRndData2$(EXESUFX)
 
 #ICC RNG core
 ICC_RNG 	= $(GSK_SDK)/GenRndData$(EXESUFX)
@@ -114,6 +108,7 @@ SDK_TARGETS = \
 JSDK_TARGETS = 	\
 		$(JGSK_SDK)/inc/icc.h \
 		$(JGSK_SDK)/inc/iccglobals.h \
+		$(JGSK_SDK)/inc/icc_loader.h \
 		$(JGSK_SDK)/inc/icc_a.h \
 		$(JGSK_SDK)/inc/jcc_a.h \
 		$(JGSK_SDK)/bin/jcctest$(EXESUFX)
@@ -123,17 +118,14 @@ JSDK_TARGETS = 	\
 # Note the lib/ dir in the JSDK only exists on windows and 
 # is built & populated when we build the shared lib
 
-JGSK_TARGETS = \
-		$(JGSK_LIB)
-
+JGSK_TARGETS = $(JGSK_LIB)
 
 ICKC_TARGETS = $(ICKC_LIB)
-ICKCSDK_TARGETS : runtime_setup sdk_setup Jruntime_setup $(ICKC_SDK) \
-		$(ICKC_SDK)/inc/icc.h \
-		$(ICKC_SDK)/inc/iccglobals.h \
-		$(ICKC_SDK)/inc/icc_a.h \
-		$(ICKC_SDK)/inc/ickc_a.h \
-		$(ICKC_SDK)/bin/ickctest$(EXESUFX)
+
+# ICKCSDK_TARGETS will use GSK_SDK instead of creating a separate directory
+ICKCSDK_TARGETS : runtime_setup sdk_setup \
+		$(GSK_SDK)/ickc_a.h \
+		$(GSK_SDK)/ickctest$(EXESUFX)
 	echo $@ made
 
 #
@@ -160,12 +152,12 @@ TARGETS = \
 	$(TIMER_OBJS) \
 	icctest$(EXESUFX) \
 	icctest_s$(EXESUFX) \
-	GenRndData2$(EXESUFX) \
+	loadtest$(EXESUFX) GenRndData2$(EXESUFX) $(ICCPKG_PERF) \
 	smalltest$(EXESUFX) \
 	$(JGSK_TARGETS) $(JSDK_TARGETS) \
 	$(ICKC_TARGETS) ICKCSDK_TARGETS
 
-SDK_HEADERS = $(GSK_SDK)/icc.h $(GSK_SDK)/icc_a.h $(GSK_SDK)/iccglobals.h
+SDK_HEADERS = $(GSK_SDK)/icc.h $(GSK_SDK)/icc_a.h $(GSK_SDK)/iccglobals.h $(GSK_SDK)/icc_loader.h
 
 # our local dks integration and test code
 # sigtest and kemtest comes from here
@@ -353,6 +345,9 @@ $(GSK_SDK)/sigtest$(EXESUFX): $(GSK_SDK) pqc/sigtest$(EXESUFX)
 $(GSK_SDK)/sigtest.c: $(GSK_SDK) pqc/sigtest.c
 	$(CP) pqc/sigtest.c $@
 
+$(GSK_SDK)/icc_loader.c: $(ICC_ROOT)/icc_test/icc_loader.c
+	$(CP) $(ICC_ROOT)/icc_test/icc_loader.c $@
+
 OS_helpers.c: $(ICC_ROOT)/icc/OS_helpers.c
 	$(CP) $(ICC_ROOT)/icc/OS_helpers.c $@
 
@@ -380,7 +375,7 @@ runtime_setup_C: $(INST_DIR)/C/icc/icclib/$(OLD_LIBICC) $(INST_DIR)/C/icc/ReadMe
 	if [ -f $(ICC_ROOT)/icc/create_icc_no_legacy.0 ]; then echo "No FIPS ICC build"; fi ;
 	if [ -f $(ICC_ROOT)/icc/create_icc_no_legacy.0 ]; then $(RM) -r $(INST_DIR)/C; fi ;
 
-sdk_setup_C: $(GSK_SDK)/icc.h $(GSK_SDK)/icc_a.h $(GSK_SDK)/iccglobals.h
+sdk_setup_C: $(GSK_SDK)/icc.h $(GSK_SDK)/icc_a.h $(GSK_SDK)/iccglobals.h $(GSK_SDK)/icc_loader.h
 
 #		$(GSK_SDK)/pqapi.h $(GSK_SDK)/pqparams.h \
 #		$(GSK_SDK)/gsk_argon2.h $(GSK_SDK)/gsk_exp.h
@@ -452,7 +447,7 @@ sdk_setup: sdk_setup_C sdk_setup_N
 
 clean: clean_jgsk clean_ickc
 	-$(RM) icctest$(EXESUFX) pktest_direct$(EXESUFX) loadtest$(EXESUFX) chkiccload$(EXESUFX)
-	-$(RM) icctest.c jcctest.c ickctest.c
+	-$(RM) jcctest.c ickctest.c
 	-$(RM) $(TARGETS) $(SDK_TARGETS)
 	-$(RM) *.o *.obj *.so *.dylib *.dll *.sl *.x *.lib
 	-$(RM) *.ilk *.manifest *.pdb
@@ -460,9 +455,7 @@ clean: clean_jgsk clean_ickc
 	-$(RM) 	$(GSK_LIB).unstripped
 	-$(RM) delta.exp
 	-$(RM) 	API_html/*
-	-$(RM) $(INST_DIR)/N/icc/icclib/$(NEW_LIBICC)
-	-$(RM) -r $(INST_DIR)/* 
-	-$(RM) -r $(GSK_SDK)/*
+	-$(RM) -r $(GSK_SDK)
 	-$(RM) -r $(TMP_SRC) $(TMP_OBJS)
 	-$(RM) exports_old/*.exp exports_old/iccstepZOS.h
 	"$(MAKE)" -C TOTP clean
@@ -479,18 +472,12 @@ clean: clean_jgsk clean_ickc
 
 $(GSK_LIB): $(GSK_DIR) $(GSK_LIBNAME)
 	$(CP) $(GSK_LIBNAME) $@
-	$(RM) $(GSK_LIBNAME)
-	touch keep_tar_quiet.pdb
-	-$(CP) *.pdb $(GSK_SDK)
-	touch  $(ICC_ROOT)/package/iccsdk/keep_tar_quiet.pdb
-	-$(CP) $(ICC_ROOT)/package/iccsdk/*.pdb $(GSK_SDK)
-	-touch  OLD_ICC/$(OPSYS)/iccsdk/keep_tar_quiet.pdb
-	-$(CP) OLD_ICC/$(OPSYS)/iccsdk/*.pdb $(GSK_SDK)
+#	$(RM) $(GSK_LIBNAME)
 
 
 # Separate rules for Windows and "other" platforms
 # so the libs can be signed 
-# and we have the 32 and 64 bit variants ... ugly, really ugly
+# and we have the 32 and 64 bit variants
 # plus z/OS which doesn't link normally
 #
 # These have been moved into platforms/$(OPSYS)_.mk
@@ -587,11 +574,16 @@ icc_aux_test$(EXESUFX): icc_aux_test$(OBJSUFX) $(AUXLIB)  $(GSK_LIB)
 	$(LD) $(LDFLAGS) icc_aux_test$(OBJSUFX) $(AUX_LIBS) $(ICCPKG_LIBS)  $(LDLIBS) 
 
 
+# This version runs on the step library
+GenRndData2$(OBJSUFX): $(ICC_ROOT)/icc/tools/GenRndData2.c $(GSK_LIB)
+	$(CC) $(CFLAGS) -I./ -I$(GSK_SDK) -DICCPKG $(ICC_ROOT)/icc/tools/GenRndData2.c
 
-GenRndData2$(EXESUFX): $(ICC_ROOT)/icc/tools/GenRndData2.c $(GSK_LIB)
-	$(CC) $(CFLAGS) -I./ -I$(GSK_SDK) -DICCPKG $(ICC_ROOT)/icc/tools/GenRndData2.c $(OUT)GenRndData2$(OBJSUFX)
+GenRndData2$(EXESUFX): GenRndData2$(OBJSUFX)
 	$(LD) $(LDFLAGS) GenRndData2$(OBJSUFX) $(ICCPKG_LIBS) $(LDLIBS) 
-	-$(CP) GenRndData2$(EXESUFX) $(GSK_SDK)/
+
+$(GSK_SDK)/GenRndData2$(EXESUFX): $(GSK_SDK) GenRndData2$(EXESUFX)
+	$(CP) GenRndData2$(EXESUFX) $@
+
 
 # GSK_LIB and ICCPKG_LIBS is coming from gsk_crypto.mk - references the step import library
 # IS_FIPS and MUPPET comes from muppet.mk (written by ICCencapsulator in prebuild step)
@@ -661,9 +653,6 @@ $(GSK_OPENSSL): $(ICC_ROOT)/package/iccsdk/openssl$(EXESUFX)
 # Namespaced and with a different shared library name to avoid direct conflicts 
 # between Java installed libraries and the C/C++ stack.
 #
-# To date problems were only seen on AIX, but lets use the big hammer
-# and keep it like that.
-#
 
 #$(JGSK_DIR)/Standard_International_Program_License_Agreement.pdf: $(JGSK_DIR) $(ICC_ROOT)/icc/Standard_International_Program_License_Agreement.pdf
 #	$(CP) $(ICC_ROOT)/icc/Standard_International_Program_License_Agreement.pdf $@
@@ -672,10 +661,11 @@ $(GSK_OPENSSL): $(ICC_ROOT)/package/iccsdk/openssl$(EXESUFX)
 #$(JGSK_SDK)/Standard_International_Program_License_Agreement.pdf: $(JGSK_DIR) $(ICC_ROOT)/icc/Standard_International_Program_License_Agreement.pdf
 #	$(CP) $(ICC_ROOT)/icc/Standard_International_Program_License_Agreement.pdf $@
 #	chmod +w $@
+# match runtime_setup_C
 
 Jruntime_setup_C: $(JINST_DIR)/C/icc/icclib/$(OLD_LIBICC) $(JINST_DIR)/C/icc/ReadMe.txt
-	if [ -f $(ICC_ROOT)/icc/create_icc_no_legacy.0 ]; then echo "No FIPS ICC build" >> $(JINST_DIR)/C/icc/ReadMe.txt; fi ;
-	if [ -f $(ICC_ROOT)/icc/create_icc_no_legacy.0 ]; then $(RM) $(JINST_DIR)/C/icc/icclib/*; fi ;
+	if [ -f $(ICC_ROOT)/icc/create_icc_no_legacy.0 ]; then echo "No FIPS ICC build"; fi ;
+	if [ -f $(ICC_ROOT)/icc/create_icc_no_legacy.0 ]; then $(RM) -r $(JINST_DIR)/C; fi ;
 
 $(JINST_DIR)/C/icc/icclib: $(JINST_DIR)
 	$(MKDIR) $@
@@ -715,12 +705,8 @@ jgsk_wrap2$(OBJSUFX): gsk_wrap2.c gsk_wrap2_a.c $(ICC_ROOT)/icc/loaded.c name_ca
 	$(CC) $(CFLAGS) -DICCPKG -DJGSK_WRAP -DMYNAME=jgskiccs8 -DGSK_LIBNAME=\""$(JGSK_LIBNAME)"\" -DOPSYS="\"$(OPSYS)\"" -DGSK_GLOBAL=\""$(GSK_GLOBAL)"\" -I$(JGSK_SDK)/inc/ -I$(ICC_ROOT)/icc/ gsk_wrap2.c $(OUT)$@
 
 clean_jgsk:
-	-$(RM) $(JGSK_DIR)/N/icc/icclib/*
-	-$(RM) $(JGSK_DIR)/C/icc/icclib/*
-	-$(RM) $(JGSK_SDK)/inc/*.h
-	-$(RM) $(JGSK_SDK)/debug/*
-	-$(RM) $(JGSK_SDK)/docs/*
-	-$(RM) $(JGSK_SDK)/bin/jcctest$(EXESUFX)
+	-$(RM) -r $(JGSK_DIR)
+	-$(RM) -r $(JGSK_SDK)
 	-$(RM) $(JGSK_LIBNAME) jcctest$(EXESUFX)
 	-$(RM) -r $(JGSK_LIB)
 
@@ -737,7 +723,7 @@ jcctest$(EXESUFX): jcctest$(OBJSUFX) $(JGSK_LIB)
 	$(LD) $(LDFLAGS) jcctest$(OBJSUFX) $(JCCPKG_LIBS) $(LDLIBS) 
 
 $(JGSK_SDK)/bin/jcctest$(EXESUFX): $(JGSK_SDK)/bin jcctest$(EXESUFX)
-	-$(CP) jcctest$(EXESUFX) $@
+	$(CP) jcctest$(EXESUFX) $@
 
 $(JGSK_SDK)/docs/IBM_CKC.pdf: $(JGSK_SDK)/docs $(ICC_ROOT)/doc/IBM_CKC.pdf
 	$(CP) $(ICC_ROOT)/doc/IBM_CKC.pdf $@
@@ -747,6 +733,9 @@ $(JGSK_SDK)/inc/icc.h: $(JGSK_SDK)/inc $(ICC_ROOT)/icc/icc.h
 
 $(JGSK_SDK)/inc/iccglobals.h: $(JGSK_SDK)/inc $(ICC_ROOT)/icc/iccglobals.h
 	$(CP) $(ICC_ROOT)/icc/iccglobals.h $@
+
+$(JGSK_SDK)/inc/icc_loader.h: $(ICC_ROOT)/icc_test/icc_loader.h $(JGSK_SDK)/inc
+	$(CP) $< $@
 
 $(JGSK_SDK)/inc/icc_a.h: $(JGSK_SDK)/inc $(ICC_ROOT)/iccpkg/iccpkg_a.h
 	$(CP) $(ICC_ROOT)/iccpkg/iccpkg_a.h $@
@@ -773,55 +762,34 @@ $(JGSK_SDK)/docs/PQCgenKAT_sign.c: $(JGSK_SDK)/docs DilKyb/dilithium/PQCgenKAT_s
 # ICKC_ Namespaced
 #
 
-$(ICKC_DIR)/Standard_International_Program_License_Agreement.pdf: $(ICKC_DIR) $(ICC_ROOT)/icc/Standard_International_Program_License_Agreement.pdf
-	$(CP) $(ICC_ROOT)/icc/Standard_International_Program_License_Agreement.pdf $@
-	chmod +w $@
-
-$(ICKC_SDK)/Standard_International_Program_License_Agreement.pdf: $(ICKC_DIR) $(ICC_ROOT)/icc/Standard_International_Program_License_Agreement.pdf
-	$(CP) $(ICC_ROOT)/icc/Standard_International_Program_License_Agreement.pdf $@
-	chmod +w $@
-
 # $(ICKC_LIBNAME) is defined in gsk_crypto.mk but the build target is defined in platforms/$(OPSYS)_.mk using GSKLIB_B (e.g WIN64_.mk)
 
-$(ICKC_LIB): $(ICKC_DIR) $(ICKC_LIBNAME)
+$(ICKC_LIB): $(GSK_DIR) $(ICKC_LIBNAME)
 	$(CP) $(ICKC_LIBNAME) $@
 
 ickc_wrap2$(OBJSUFX): gsk_wrap2.c gsk_wrap2_a.c $(ICC_ROOT)/icc/loaded.c name_cache.c $(ICC_ROOT)/icc/name_cache_tables.c \
-	$(ICKC_SDK)/inc/icc.h $(ICKC_SDK)/inc/icc_a.h $(ICKC_SDK)/inc/iccglobals.h $(ICC_ROOT)/icc/loaded.h $(ICC_ROOT)/icc/iccversion.h $(ICC_ROOT)/icc/tracer.h $(ICKC_SDK)/inc/ickc_a.h
-	$(CC) $(CFLAGS) -DICCPKG -DICKC_WRAP -DMYNAME=ickc -DGSK_LIBNAME=\""$(ICKC_LIBNAME)"\" -DOPSYS="\"$(OPSYS)\"" -DGSK_GLOBAL=\""$(GSK_GLOBAL)"\" -I$(ICKC_SDK)/inc/ -I$(ICC_ROOT)/icc/ gsk_wrap2.c $(OUT)$@
+	$(GSK_SDK)/icc.h $(GSK_SDK)/icc_a.h $(GSK_SDK)/iccglobals.h $(ICC_ROOT)/icc/loaded.h $(ICC_ROOT)/icc/iccversion.h $(ICC_ROOT)/icc/tracer.h $(GSK_SDK)/ickc_a.h
+	$(CC) $(CFLAGS) -DICCPKG -DICKC_WRAP -DMYNAME=ickc -DGSK_LIBNAME=\""$(ICKC_LIBNAME)"\" -DOPSYS="\"$(OPSYS)\"" -DGSK_GLOBAL=\""$(GSK_GLOBAL)"\" -I$(GSK_SDK) -I$(ICC_ROOT)/icc/ gsk_wrap2.c $(OUT)$@
 
 ickctest$(OBJSUFX): $(ICC_ROOT)/icc/icctest.c $(SDK_HEADERS)
 	$(CP) $(ICC_ROOT)/icc/icctest.c ickctest.c
-	$(CC) $(CFLAGS) -I./ -I$(ICKC_SDK)/inc -I$(ICC_ROOT)/icc -DICCPKG -DICKC_WRAP ickctest.c $(OUT)$@
+	$(CC) $(CFLAGS) -I./ -I$(GSK_SDK) -I$(ICC_ROOT)/icc -DICCPKG -DICKC_WRAP ickctest.c $(OUT)$@
 	-$(RM) ickctest.c
 
 ickctest$(EXESUFX): ickctest$(OBJSUFX) $(ICKC_LIB)
 	$(LD) $(LDFLAGS) ickctest$(OBJSUFX) $(ICKCPKG_LIBS) $(LDLIBS)
 
-$(ICKC_SDK)/bin/ickctest$(EXESUFX): $(ICKC_SDK)/bin ickctest$(EXESUFX)
-	-$(CP) ickctest$(EXESUFX) $@
+$(GSK_SDK)/ickctest$(EXESUFX): ickctest$(EXESUFX)
+	$(CP) ickctest$(EXESUFX) $@
 
-$(ICKC_SDK)/inc/icc.h: $(ICKC_SDK)/inc $(ICC_ROOT)/icc/icc.h
-	$(CP) $(ICC_ROOT)/icc/icc.h $@
-
-$(ICKC_SDK)/inc/iccglobals.h: $(ICKC_SDK)/inc $(ICC_ROOT)/icc/iccglobals.h
-	$(CP) $(ICC_ROOT)/icc/iccglobals.h $@
-
-$(ICKC_SDK)/inc/icc_a.h: $(ICKC_SDK)/inc $(ICC_ROOT)/iccpkg/iccpkg_a.h
-	$(CP) $(ICC_ROOT)/iccpkg/iccpkg_a.h $@
-
-# just convert the JCC namespacer to ICKC
-$(ICKC_SDK)/inc/ickc_a.h: $(ICKC_SDK)/inc jcc_a.h
+# Only need to create the ICKC-specific header others are already available
+$(GSK_SDK)/ickc_a.h: $(GSK_SDK) jcc_a.h
 	sed 's/JCC_/ICKC_/g' jcc_a.h > $@
 
 clean_ickc:
-	-$(RM) $(ICKC_DIR)/N/icc/icclib/*
-	-$(RM) $(ICKC_DIR)/C/icc/icclib/*
-	-$(RM) $(ICKC_SDK)/inc/*.h
-	-$(RM) $(ICKC_SDK)/debug/*
-	-$(RM) $(ICKC_SDK)/docs/*
-	-$(RM) $(ICKC_SDK)/bin/jcctest$(EXESUFX)
-	-$(RM) $(ICKC_LIBNAME) jcctest$(EXESUFX)
+	-$(RM) $(GSK_SDK)/ickc_a.h
+	-$(RM) $(GSK_SDK)/ickctest$(EXESUFX)
+	-$(RM) $(ICKC_LIBNAME) ickctest$(EXESUFX)
 	-$(RM) -r $(ICKC_LIB)
 
 
@@ -840,14 +808,38 @@ log_cat:
 log_rm:
 	-$(RM) GSKIT_CRYPTO.log
 
-tests: log_init chkiccload_test log_cat log_init icctest_test log_cat pqc_tests
-	echo tests complete
+tests: log_init chkiccload_test log_cat log_init icctest_test jcctest_test ickctest_test icctest_s_test log_cat pqc_tests
+	@echo tests complete
 
 chkiccload_test:
 	$(GSK_SETUP); ./chkiccload
 
 icctest_test:
 	$(GSK_SETUP); ./icctest
+
+#LINUX - default
+SYSLIBPATH=LD_LIBRARY_PATH
+ifeq ($(findstring WIN, $(OPSYS)), WIN)
+#WIN
+SYSLIBPATH=PATH
+endif
+ifeq ($(findstring AIX, $(OPSYS)), AIX)
+#AIX
+SYSLIBPATH=LIBPATH
+endif
+ifeq ($(findstring OSX, $(OPSYS)), OSX)
+#OSX
+SYSLIBPATH=DYLD_LIBRARY_PATH
+endif
+
+jcctest_test:
+	cd $(JGSK_DIR); export $(SYSLIBPATH)=.; ../../iccpkg/jcctest
+
+ickctest_test:
+	cd $(GSK_DIR); export $(SYSLIBPATH)=.; ../../iccpkg/ickctest
+
+icctest_s_test:
+	$(GSK_SETUP); ./icctest_s
 
 #
 # ---------------- End of JCEPlus stanzas --------------------------

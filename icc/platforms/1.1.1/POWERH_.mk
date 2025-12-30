@@ -24,7 +24,7 @@ tmp/dummyfile: $(SLIBCRYPTO)
 	$(MKDIR) tmp
 	( \
 		cd tmp; \
-		ar -X64  x  ../$(SLIBCRYPTO); \
+		$(AR) x ../$(SLIBCRYPTO); \
 		cd ..; \
         )
 	touch $@

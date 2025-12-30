@@ -1,55 +1,52 @@
 #
-# Make file for ICCPKG components exported to GSkit
+# Make file for ICCPKG components
 #
 
 iccpkg: ICC_ver.txt $(ICC_ROOT)/package/ICCPKG.tar  \
 	$(ICC_ROOT)/package/gsk_crypto.tar $(ICC_ROOT)/package/gsk_crypto_sdk.tar \
 	$(ICC_ROOT)/package/jgsk_crypto.tar $(ICC_ROOT)/package/jgsk_crypto_sdk.tar
 
+# ICC ICC_ and ICKC_ namespace
 
-$(ICC_ROOT)/package/gsk_crypto.tar: $(ICC_ROOT)/package/gskit_crypto
-	-$(RM) $(ICC_ROOT)/package/gskit_crypto/dummyfile
+# include $(ICC_ROOT)/iccpkg/gsk_crypto.mk
+
+$(ICC_ROOT)/package/gsk_crypto.tar: $(GSK_DIR)
 	( \
-		cd $(ICC_ROOT)/package/gskit_crypto/; \
-		$(TARCMD) $(ICC_ROOT)/gsk_crypto.tar * \
+		cd $(GSK_DIR)/; \
+		$(TARCMD) ../gsk_crypto.tar * \
 	)
 
-$(ICC_ROOT)/package/gsk_crypto_sdk.tar: $(ICC_ROOT)/package/gsk_sdk
+$(ICC_ROOT)/package/gsk_crypto_sdk.tar: $(GSK_SDK)
 	( \
-		cd $(ICC_ROOT)/package; \
-	        ( \
-			cd gsk_sdk ; \
-			touch keep_tar_quiet.pdb ; \
-		 	$(TARCMD) pdb.tar *.pdb; \
-			cd .. ; \
-		); \
-		$(TARCMD) gsk_crypto_sdk.tar gsk_sdk \
+		cd $(ICC_ROOT)/package/ ; \
+		$(TARCMD) gsk_crypto_sdk.tar gsk_sdk ; \
 	)
 
-$(ICC_ROOT)/package/jgsk_crypto.tar: $(ICC_ROOT)/package/jgskit_crypto
+# Java JCC_ namspace
+
+$(ICC_ROOT)/package/jgsk_crypto.tar: $(JGSK_DIR)
 	( \
-		cd $(ICC_ROOT)/package/jgskit_crypto/; \
-		$(TARCMD) $(ICC_ROOT)/jgsk_crypto.tar *; \
+		cd $(JGSK_DIR)/; \
+		$(TARCMD) ../jgsk_crypto.tar *; \
 	)
 
-$(ICC_ROOT)/package/jgsk_crypto_sdk.tar: $(ICC_ROOT)/package/jgsk_sdk
+$(ICC_ROOT)/package/jgsk_crypto_sdk.tar: $(JGSK_SDK)
 	( \
-		cd $(ICC_ROOT)/package; \
+		cd $(ICC_ROOT)/package/ ; \
 		$(TARCMD) jgsk_crypto_sdk.tar jgsk_sdk ; \
 	)
 
-$(ICC_ROOT)/package/ICCPKG.tar: $(ICC_ROOT)/iccpkg/gsk_wrap2.c  
+# ICCPKG
+
+$(ICC_ROOT)/package/ICCPKG.tar: $(PACKAGE_DIR) $(ICC_ROOT)/iccpkg/gsk_wrap2.c
 	$(MKDIR) $(PACKAGE_DIR)/sources
 	$(MKDIR) $(PACKAGE_DIR)/sources/exports
 	$(MKDIR) $(PACKAGE_DIR)/bvt
 	$(MKDIR) $(PACKAGE_DIR)/bvt/icc
 	$(MKDIR) $(PACKAGE_DIR)/iccpkg_sdk
-#	$(MKDIR) $(PACKAGE_DIR)/manifests
 	$(MKDIR) $(PACKAGE_DIR)/zlib
 	$(MKDIR) $(PACKAGE_DIR)/zlib/include
-	$(MKDIR) $(PACKAGE_DIR)/gskit_crypto
 	$(MKDIR) $(PACKAGE_DIR)/doc
-	echo "Dummy file to stop tar complaining" > $(PACKAGE_DIR)/gskit_crypto/dummyfile
 # Copy the bits that end up in the iccpkg SDK
 	$(CP) $(ICC_ROOT)/iccpkg/iccpkg_a.h $(PACKAGE_DIR)/iccpkg_sdk/icc_a.h
 	$(CP) $(ICC_ROOT)/icc/icc.h $(PACKAGE_DIR)/iccpkg_sdk/

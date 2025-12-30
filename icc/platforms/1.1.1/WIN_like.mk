@@ -10,10 +10,10 @@ opensslrc.RES: opensslrc.rc
 	rc -DVTAG=$(VTAG) opensslrc.rc
 
 icc.res: icc.rc
-	rc -DICC_OFFICIAL_BUILD icc.rc
+	rc $(findstring -DICC_OFFICIAL_BUILD, $(CFLAGS)) icc.rc
 
-$(MYOPENSSL): openssl.exe
-	$(CP) openssl.exe $@
+$(MYOPENSSL): openssl$(EXESUFX)
+	$(CP) openssl$(EXESUFX) $@
 
 ../$(OPENSSL_VER)/apps/openssl$(OBJSUFX): ../$(OPENSSL_VER)/apps/openssl.c
 	$(BUILD_OSSL)
@@ -21,7 +21,7 @@ $(MYOPENSSL): openssl.exe
 openssl$(OBJSUFX): $(OSSL_DIR)/apps/openssl$(OBJSUFX)
 	cp $(OSSL_DIR)/apps/openssl$(OBJSUFX) $@
 
-openssl.exe: openssl$(OBJSUFX) Build_OSSL_Complete $(E_OBJ) $(SLIBCRYPTO_OBJS) $(SLIBSSL_OBJS) platform$(OBJSUFX)
+openssl$(EXESUFX): openssl$(OBJSUFX) Build_OSSL_Complete $(E_OBJ) $(SLIBCRYPTO_OBJS) $(SLIBSSL_OBJS) platform$(OBJSUFX)
 	$(LD) $(LDFLAGS) openssl$(OBJSUFX) platform$(OBJSUFX) $(E_OBJ) $(SLIBCRYPTO_OBJS) $(SLIBSSL_OBJS) $(OPENSSL_LIBS) $(LDLIBS) ws2_32.lib
 
 #

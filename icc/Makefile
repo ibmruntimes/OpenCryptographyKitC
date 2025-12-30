@@ -124,15 +124,19 @@ include ./ossl.mk
 # make features if necessary.
 
 include platforms/$(OPENSSL_LIBVER)/$(OPSYS)_.mk
-# Builds a special package for GSKit.
-# iccpkg: comes from ICCPKG.mk
-include ./ICCPKG.mk
 
 # Delta timing code. High res counters
 include ./delta.mk
 
 # Pick up default install path for fallback code
 include $(ICC_ROOT)/iccpkg/gsk_crypto.mk
+
+# Builds a special package for GSKit.
+# iccpkg: comes from ICCPKG.mk
+include ./ICCPKG.mk
+
+# Handle conditional CAVS tool build
+#include ./CAVS.mk
 
 # Handle Argon2 MAKE
 # Note: iccpkg/Argon2/Argon2.mk gets copied with edits to icc to resolve file namespacing problem on Z
@@ -155,7 +159,7 @@ help:
 	@echo    set_icc_version
 	@echo         e.g: 'make ... ICC_VERSION_VER=x ICC_VERSION_REL=y ICC_VERSION_MOD=z set_icc_version' to get "x.y.z" as version number
 	@echo    build_all
-	@echo    create_pqc, build_pqc, clean_pqc
+	@echo    create_pqc, build_pqc, clean_pqc, tests_pqc
 	@echo    backup_libdks
 	@echo         tars up libdks which can be checked in to avoid git clones
 	@echo    show_config, show_version_info
@@ -175,11 +179,15 @@ API_DIR = platforms/$(OPENSSL_LIBVER)/API
 
 # What we build.
 
+# tmp/dummyfile - ref platforms/1.1.1/*.mk - triggers object extract of openssl static lib $(SLIBCRYPTO)
+# MYOPENSSL is our local copy of openssl static linked - triggers OpenSSL build
+
 TARGETS = $(MYOPENSSL) tmp/dummyfile  \
-	signer$(EXESUFX) \
 	$(DELTA) \
-	$(STLPRFX)zlib$(STLSUFX)  \
-	$(ICCDLL) $(ICCLIB_SDK)  \
+	$(ICCDLL_NAME) \
+	$(ICCDLL) \
+	$(ICCLIB_SDK) \
+	icclib_sa$(EXESUFX) \
 	$(ICCTEST) \
 	$(ICCRTE) \
 	$(TOOLS) \
@@ -192,7 +200,7 @@ SDK_TARGETS: $(SDK_DIR)/icc.h $(SDK_DIR)/icc_a.h $(SDK_DIR)/iccglobals.h
 	ls $(SDK_DIR)
 
 # These headers will link an application to the ICC step library - icc_a.h (iccpkg_a.h) has the ICC_ prefix - ref gsk_crypto.mk 
-ICCPKG_SDK_HEADERS: $(GSK_SDK)/icc.h $(GSK_SDK)/icc_a.h $(GSK_SDK)/iccglobals.h
+ICCPKG_SDK_HEADERS: $(GSK_SDK)/icc.h $(GSK_SDK)/icc_a.h $(GSK_SDK)/iccglobals.h $(GSK_SDK)/icc_loader.h
 	ls $(GSK_SDK)
 
 #	$(CAVSON)
@@ -272,10 +280,10 @@ $(ICC_ROOT)/icc/Argon2:
 	$(MKDIR) $@
 
 # get a local copy of mystdint.h from DilKyb dir
-$(ICC_ROOT)/icc/Argon2/mystdint.h: $(ICC_ROOT)/icc/Argon2 $(ICC_ROOT)/iccpkg/mystdint.h
-	$(CP) $(ICC_ROOT)/iccpkg/mystdint.h $@
+#$(ICC_ROOT)/icc/Argon2/mystdint.h: $(ICC_ROOT)/icc/Argon2 $(ICC_ROOT)/iccpkg/DilKyb/headers/mystdint.h
+#	$(CP) $(ICC_ROOT)/iccpkg/DilKyb/headers/mystdint.h $@
 
-$(ICC_ROOT)/libArgon/phc-winner-argon2: $(ICC_ROOT)/icc/Argon2 $(ICC_ROOT)/icc/Argon2/mystdint.h
+$(ICC_ROOT)/libArgon/phc-winner-argon2: $(ICC_ROOT)/icc/Argon2
 	-rm -rf $(ICC_ROOT)/libArgon/*
 	if [ -e $(ICC_ROOT)/libArgon.tar.gz ] ; then \
 		 ( cd ..; tar xzf libArgon.tar.gz -C libArgon/ ) ; \
@@ -287,11 +295,6 @@ $(ICC_ROOT)/libArgon/phc-winner-argon2: $(ICC_ROOT)/icc/Argon2 $(ICC_ROOT)/icc/A
 	fi
 	$(CP) -r $(ICC_ROOT)/libArgon/phc-winner-argon2/src/* $(ICC_ROOT)/icc/Argon2/
 	$(CP) $(ICC_ROOT)/libArgon/phc-winner-argon2/include/* $(ICC_ROOT)/icc/Argon2/
-# sed -i wont work on some platforms but this runs on linux pre-build as part of create
-	cd $(ICC_ROOT)/icc/Argon2 ; sed -i "s/^#include <stdint.h>/#include <mystdint.h>/" argon2.h \
-	       	blake2/blake2-impl.h blake2/blake2b.c opt.c ref.c test.c bench.c run.c
-# make sure the sed worked
-	grep mystdint.h $(ICC_ROOT)/icc/Argon2/argon2.h
 # resolve Z's 'file name clash with openssl's blake2b - some sharing with iccpkg/Argon2 so fix that copy too
 # Note: We include Argon2.mk so this needs to be done in the pre-build/create so it is ready for the build which includes Argon2.mk
 	$(CP) $(ICC_ROOT)/icc/Argon2/blake2/blake2b.c $(ICC_ROOT)/icc/Argon2/blake2/blake2b_icc.c
@@ -303,16 +306,17 @@ $(ICC_ROOT)/libArgon/phc-winner-argon2: $(ICC_ROOT)/icc/Argon2 $(ICC_ROOT)/icc/A
 tar_libArgon:
 	cd libArgon ; tar czf $(ICC_ROOT)/libArgon.tar.gz phc-winner-argon2
 
-#Build_Argon: create_libArgon $(ICC_ROOT)/libArgon/phc-winner-argon2/Makefile
-#	"$(MAKE)" -C $(ICC_ROOT)/libArgon/phc-winner-argon2/ $(DKS_MAKE_FLAGS) libs
-
 
 ### Dilithium Kyber Sphincs
  
 clean_dks:
 	-rm -rf $(ICC_ROOT)/libdks
+	-rm create_dks build_dks build_dks_k build_dks_d build_dks_s
+
+# triggered via PQC_CREATE in icc_defs.mk
 
 create_dks: $(ICC_ROOT)/libdks $(ICC_ROOT)/libdks/kyber $(ICC_ROOT)/libdks/dilithium $(ICC_ROOT)/libdks/sphincs
+	touch $@
 
 # if the tar archive is available then use it otherwise git clone it
 # Note: use backup_libdks target to create the tar archive
@@ -367,23 +371,39 @@ $(ICC_ROOT)/libdks/kyber $(ICC_ROOT)/libdks/dilithium $(ICC_ROOT)/libdks/sphincs
 	)
 
 # nistkat needs to link to openssl so only build it for 64 bit linux
-AMD64_LINUX_PQCKAT=nistkat tests
+AMD64_LINUX_PQCKAT=nistkat
 # Sphincs KAT only compiles on linux
 AMD64_LINUX_PQCKAT_SPHINCS=$(AMD64_LINUX_PQCKAT)
 # the nistkat test is crashing in 32 bit linux. Some linking problem
 LINUX_PQCKAT=nistkat
-WIN64_VS2022_PQCKAT=nistkat tests
-AIX64_PQCKAT=nistkat tests
+WIN64_VS2022_PQCKAT=nistkat
+AIX64_PQCKAT=nistkat
 PQCKAT=$($(OPSYS)_PQCKAT)
 PQCKAT_SPHINCS=$($(OPSYS)_PQCKAT_SPHINCS)
 
-.PHONY: create_dks build_dks_k build_dks_d build_dks_s build_dks
+# Enable PQC tests for some platforms
+
+AMD64_LINUX_PQCKAT_TEST=tests
+AMD64_LINUX_PQCKAT_SPHINCS_TEST=tests
+WIN64_VS2022_PQCKAT_TEST=tests
+AIX64_PQCKAT_TEST=tests
+
+PQCKAT_TEST = $($(OPSYS)_PQCKAT_TEST)
+PQCKAT_SPHINCS_TEST = $($(OPSYS)_PQCKAT_SPHINCS_TEST)
+
+.SUFFIXES:
+%.mk:
+	# no recipe - disabled
+Makefile:
+	# no recipe - disabled
 
 build_dks_k: $(ICC_ROOT)/libdks/kyber/ref/Makefile
 	"$(MAKE)" -C $(ICC_ROOT)/libdks/kyber/ref $(DKS_MAKE_FLAGS) static $(PQCKAT)
+	touch $@
 
 build_dks_d: $(ICC_ROOT)/libdks/dilithium/ref/Makefile
 	"$(MAKE)" -C $(ICC_ROOT)/libdks/dilithium/ref $(DKS_MAKE_FLAGS) static $(PQCKAT)
+	touch $@
 
 build_dks_s: $(ICC_ROOT)/libdks/sphincs/ref/Makefile $(ICC_ROOT)/libdks/sphincs/ref/api.h
 	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-128s static $(PQCKAT_SPHINCS)
@@ -398,11 +418,23 @@ build_dks_s: $(ICC_ROOT)/libdks/sphincs/ref/Makefile $(ICC_ROOT)/libdks/sphincs/
 	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-192f static
 	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-256s static
 	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=sha2-256f static
+	touch $@
 
-# the build (make) should always run
+# triggered via PQC_TARGET in icc_defs.mk
+
 build_dks: create_dks $(ICC_ROOT)/libdks/defs.mk \
 		build_dks_k build_dks_d build_dks_s
+	touch $@
 	@echo $@ built
+
+
+# triggered via PQC_TESTS in icc_defs.mk
+
+tests_dks:
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/kyber/ref $(DKS_MAKE_FLAGS) static $(PQCKAT_TEST)
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/dilithium/ref $(DKS_MAKE_FLAGS) static $(PQCKAT_TEST)
+	"$(MAKE)" -C $(ICC_ROOT)/libdks/sphincs/ref $(DKS_MAKE_FLAGS) VARIANT=shake-128s static $(PQCKAT_SPHINCS_TEST)
+
 
 # update from our Makefile patches
 $(ICC_ROOT)/libdks/defs.mk: $(ICC_ROOT)/libdks_icc/defs.mk
@@ -461,7 +493,7 @@ $(ICC_ROOT)/liboqs/CMakeLists.txt :
 		mv liboqs$(LIBOQS_VER)/* . ; mv liboqs$(LIBOQS_VER)/.* . ; \
 		rmdir liboqs$(LIBOQS_VER) ; \
 	else \
-		git clone https://github.com/open-quantum-safe/liboqs.git --depth 1 $(ICC_ROOT)/liboqs ; \
+		git clone https://github.com/open-quantum-safe/liboqs.git --depth 1 --branch 0.14.0 $(ICC_ROOT)/liboqs ; \
 		echo liboqs > $(ICC_ROOT)/liboqs/log.txt ; \
 		git -C $(ICC_ROOT)/liboqs log >> $(ICC_ROOT)/liboqs/log.txt ; \
 	fi
@@ -500,6 +532,8 @@ create_pqc: $(PQC_CREATE)
 	@echo "create: configured for: $(PQC_CREATE)"
 build_pqc: $(PQC_TARGET)
 	@echo "build: configured for: $(PQC_TARGET)"
+tests_pqc: $(PQC_TESTS)
+	@echo "tests: configured for: $(PQC_TESTS)"
 clean_pqc: clean_oqs clean_dks
 	@echo "clean: configured for: $(PQC_CREATE)"
 	"$(MAKE)" -C $(ICC_ROOT)/iccpkg/pqc clean
@@ -564,7 +598,7 @@ ICCencapsulator.class: ICCencapsulator.java
 
 # the create_all_* needs to be ran manually
 icc_a.h icc_a.c icclib_a.h icclib_a.c: functions.txt
-	echo please make create_all
+	@echo please make create_all
 	false
 
 #
@@ -687,7 +721,7 @@ log_rm:
 	-$(RM) GSKIT_CRYPTO.log
 
 # no dependancies - that causes re-signing into .sig files since they've been deleted
-tests: show_version_info pre_test log_init icctest_module log_cat icctest_openssl iccpkg_tests
+tests: show_version_info pre_test log_init icctest_module log_cat icctest_openssl iccpkg_tests $(PQC_TESTS)
 	@echo $@ complete
 
 # run this before running tests - note: zosa defines this
@@ -810,7 +844,7 @@ clean: clean_perf clean_pkcs11 clean_iccpkg clean_icc clean_icc_test
 
 # Note: some artifacts may be from older builds that are not used anymore but can interfere (like .h files)
 clean_icc:
-	-$(RM) $(TARGETS) *.o *.obj $(EXTRA_FILES) $(SDK_DIR)/*.h $(ASMOBJS)
+	-$(RM) $(TARGETS) $(LIBOBJS) $(argon2_obj) *.o *.obj $(EXTRA_FILES) $(SDK_DIR)/*.h $(ASMOBJS)
 	-$(RM) ./openssl$(EXESUFX) $(SHLPRFX)icclib$(SHLSUFX) $(STLPRFX)icc$(STLSUFX)
 	-$(RM) *.so *.dylib *.dll *.sl *.x *.lib
 	-$(RM) aes_gcm.* aes_ccm.* nist_algs1.c
@@ -886,9 +920,19 @@ $(SDK_DIR)/icc_a.h: icc_a.h $(SDK_DIR)
 $(SDK_DIR)/iccglobals.h: iccglobals.h $(SDK_DIR)
 	$(CP) iccglobals.h $@
 
+TRNG_OBJS = timer_entropy$(OBJSUFX) timer_fips$(OBJSUFX) \
+	personalise$(OBJSUFX) nist_algs$(OBJSUFX) noise_to_entropy$(OBJSUFX) \
+	entropy_estimator$(OBJSUFX) \
+	TRNG_FIPS$(OBJSUFX) \
+	TRNG_ALT$(OBJSUFX) \
+	TRNG_ALT4$(OBJSUFX) \
+	ICC_NRBG$(OBJSUFX) \
+	looper$(OBJSUFX)
+
+
 # get a local copy of mystdint.h from DilKyb dir - icclib.c needs it for Argon2
-$(SDK_DIR)/mystdint.h: $(ICC_ROOT)/iccpkg/mystdint.h $(SDK_DIR)
-	$(CP) $(ICC_ROOT)/iccpkg/mystdint.h $@
+#$(SDK_DIR)/mystdint.h: $(ICC_ROOT)/iccpkg/DilKyb/headers/mystdint.h $(SDK_DIR)
+#	$(CP) $(ICC_ROOT)/iccpkg/DilKyb/headers/mystdint.h $@
 
 # List of objs - minus the trigger for exec on load in a shared object
 LIBOBJS1 =   fips$(OBJSUFX)  \
@@ -902,22 +946,12 @@ LIBOBJS1 =   fips$(OBJSUFX)  \
 	SP800-90HMAC$(OBJSUFX) \
 	SP800-108$(OBJSUFX) \
 	$(ASMOBJS) $($(OPSYS)_LIBOBJS) \
-	timer_entropy$(OBJSUFX) \
-	personalise$(OBJSUFX) \
-	noise_to_entropy$(OBJSUFX) \
-	entropy_estimator$(OBJSUFX) \
-	nist_algs$(OBJSUFX) \
 	entropy_to_NRBG$(OBJSUFX) \
-	timer_fips$(OBJSUFX) \
-	TRNG_FIPS$(OBJSUFX) \
-	TRNG_ALT$(OBJSUFX) \
-	TRNG_ALT4$(OBJSUFX) \
-	ICC_NRBG$(OBJSUFX) \
 	SP800-90TRNG$(OBJSUFX) \
 	extsig$(OBJSUFX) \
 	SP80038F$(OBJSUFX) \
 	OS_helpers$(OBJSUFX) \
-	looper$(OBJSUFX) \
+	$(TRNG_OBJS)
 
 #- define the set of objects that end up in the ICC shared library
 #- OSSL_XTRA_OBJ are files that massage the OpenSSL API to preserve
@@ -938,7 +972,7 @@ tmp/tmp/dummyfile:  Build_OSSL_Complete tmp/dummyfile
 	)
 	touch tmp/tmp/dummyfile
 
-#- Build ICC shared library
+#- Build ICC shared library module
 #- $(ASMOBJS) is required to cater for small assembler files
 #- needed on some platforms
 #- Split this into 2 phases for the OS/X fat binaries work - resolves circular dependencies
@@ -989,6 +1023,19 @@ $(ICC_RTE_DIR)/$(SHLPRFX)icclib$(VTAG).dll: $(ICC_RTE_DIR) $(SDK_DIR) $(ICCDLL_N
 	-$(CP) tmp/*.pdb $(SDK_DIR)/ 
 	-$(CP) $(SHLPRFX)icclib$(VTAG).x $(SDK_DIR)
 
+#
+#- Build an exectuable version of libicclib.so so we can debug the POST code
+#
+
+icclib_sa$(OBJSUFX): icclib.c loaded.c loaded.h tracer.h extsig.h
+	$(CC) -DICCDLL_NAME="\"icclib_sa$(EXESUFX)\"" -DSTANDALONE_ICCLIB -DOPSYS="\"$(OPSYS)\"" -DMYNAME=icclib_sa$(VTAG) $(CFLAGS) \
+		 $(PQCINC) -I./ -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) icclib.c $(OUT)$@
+
+icclib_sa$(EXESUFX): icclib_sa$(OBJSUFX) $(ARGON) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) tmp/tmp/dummyfile signer$(EXESUFX)
+	$(LD) $(LDFLAGS) icclib_sa$(OBJSUFX) $(ARGON) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) tmp/tmp/*$(OBJSUFX) $(LDLIBS) $(PQCLIBS)
+	$(OPENSSL_PATH_SETUP) ./signer$(EXESUFX) ICCLIB_SA.txt privkey.rsa -SELF -FILE icclib_sa$(EXESUFX) $(TWEAKS)
+
+
 $(ICC_RTE_DIR)/$(SHLPRFX)icclib$(VTAG).so : $(ICC_RTE_DIR) $(ICCDLL_NAME)
 	$(CP) $(ICCDLL_NAME) $@
 
@@ -1000,7 +1047,7 @@ $(ICC_RTE_DIR)/$(SHLPRFX)icclib$(VTAG).dylib : $(ICC_RTE_DIR) $(ICCDLL_NAME)
 
 #- Compile the ICC shared library main source
 icclib$(OBJSUFX): Makefile icclib.c loaded.c loaded.h iccglobals.h platform.h iccversion.h \
-	platfsl.h iccerr.h $(TRNG_DIR)/ICC_NRBG.h tracer.h icc.h icc_a.h extsig.h $(SDK_DIR)/mystdint.h
+	platfsl.h iccerr.h $(TRNG_DIR)/ICC_NRBG.h tracer.h icc.h icc_a.h extsig.h
 	$(CC) $(CFLAGS) -DOPSYS="\"$(OPSYS)\"" -DICCDLL_NAME="\"$(ICCDLL_NAME)\"" -DMYNAME=icclib$(VTAG) \
 		-DINSTDIR=\""$(GSK_GLOBAL)"\" $(PQCINC) -I./ -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) icclib.c
 
@@ -1017,30 +1064,21 @@ OS_helpers$(OBJSUFX): OS_helpers.c
 #
 TRNG_HDRS	= -I./ -I$(ICC_ROOT)/$(ZLIB) -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(TRNG_DIR) -I$(API_DIR)
 
-TRNG_OBJS   = 	timer_entropy$(OBJSUFX) timer_fips$(OBJSUFX) \
-					personalise$(OBJSUFX) nist_algs$(OBJSUFX) noise_to_entropy$(OBJSUFX) \
-					entropy_estimator$(OBJSUFX) \
-					TRNG_FIPS$(OBJSUFX) \
-					TRNG_ALT$(OBJSUFX) \
-					TRNG_ALT4$(OBJSUFX) \
-					ICC_NRBG$(OBJSUFX) \
-					looper$(OBJSUFX)
-
 # Base routines to read TSC register equivalents
 # Note: Depends on asm routines in OpenSSL on some platforms
 timer_entropy$(OBJSUFX):  $(TRNG_DIR)/timer_entropy.c  $(TRNG_DIR)/timer_entropy.h
-	$(CC) $(CFLAGS) $(TRNG_HDRS) $(ASM_TWEAKS) $(TRNG_DIR)/timer_entropy.c
+	$(CC) $(CFLAGS) $(TRNG_HDRS) $(ASM_TWEAKS) $(TRNG_DIR)/timer_entropy.c $(OUT)$@
 
 # Conditioning for FIPS
 # PROC_DEBIAS enables distribution squeezing. That needs to be turned
 # off in all the test code.
 timer_fips$(OBJSUFX):  $(TRNG_DIR)/timer_fips.c  $(TRNG_DIR)/timer_entropy.h $(TRNG_DIR)/timer_fips.h
-	$(CC) $(CFLAGS) -DPROC_DEBIAS $(TRNG_HDRS) $(TRNG_DIR)/timer_fips.c
+	$(CC) $(CFLAGS) -DPROC_DEBIAS $(TRNG_HDRS) $(TRNG_DIR)/timer_fips.c $(OUT)$@
 
 
 # Generic personalization routines
 personalise$(OBJSUFX):  $(TRNG_DIR)/personalise.c  $(TRNG_DIR)/personalise.h
-	$(CC) $(CFLAGS) $(TRNG_HDRS)  $(TRNG_DIR)/personalise.c
+	$(CC) $(CFLAGS) $(TRNG_HDRS) $(TRNG_DIR)/personalise.c $(OUT)$@
 
 # Generic algs, pmax, AP, RC + self test
 nist_algs$(OBJSUFX): $(TRNG_DIR)/nist_algs.c $(TRNG_DIR)/nist_algs.h
@@ -1087,8 +1125,7 @@ TRNG_ALT4$(OBJSUFX):  $(TRNG_DIR)/TRNG_ALT4.c  $(TRNG_DIR)/timer_entropy.h $(PRN
 # Common code for all the TRNG's
 
 ICC_NRBG$(OBJSUFX): $(TRNG_DIR)/ICC_NRBG.c  $(TRNG_DIR)/ICC_NRBG.h \
-	$(TRNG_DIR)/TRNG_FIPS.h $(TRNG_DIR)/TRNG_ALT.h \
-	$(TRNG_DIR)/TRNG_ALT4.h
+	$(TRNG_DIR)/TRNG_FIPS.h $(TRNG_DIR)/TRNG_ALT.h $(TRNG_DIR)/TRNG_ALT4.h
 	$(CC) $(CFLAGS) $(TRNG_HDRS)   $(TRNG_DIR)/ICC_NRBG.c
 
 # API access direct to the TRNG's, mainly for testing
@@ -1116,11 +1153,10 @@ privkey.rsa:
 	$(OPENSSL_PATH_SETUP) $(REALOPENSSL) genrsa -out privkey.rsa 2048
 
 pubkey.h: privkey.rsa
-	$(OPENSSL_PATH_SETUP) $(REALOPENSSL) rsa -in privkey.rsa -outform DER -RSAPublicKey_out > rsa_pub_key.der
-	echo "/*This is an auto generated code please DO NOT modify*/" > pubkey.h
-	perl bin2hex.pl rsa_pub_key.der temp.h
-	cat temp.h >> pubkey.h
-	rm temp.h rsa_pub_key.der
+	$(OPENSSL_PATH_SETUP) $(REALOPENSSL) rsa -in privkey.rsa -outform PEM -RSAPublicKey_out > rsa_pub_key.pem
+	perl pem2c.pl rsa_pub_key.pem > pubkey.h
+	rm rsa_pub_key.pem
+	cat pubkey.h
 
 signer$(OBJSUFX): extsig.c
 	$(CC) -DSTANDALONE -DOPSYS=\"$(OPSYS)\" $(CFLAGS) -I$(OSSLINC_DIR) extsig.c $(OUT)$@
@@ -1193,7 +1229,7 @@ platfsl$(OBJSUFX): platfsl.c platfsl.h platform.h
 # ICCLIB_LINK is never defined.
 
 #- Build ICC static library stub
-$(STLPRFX)icc$(STLSUFX):  $(MYICC)$(OBJSUFX)
+$(ICCLIB): $(MYICC)$(OBJSUFX)
 	$(AR) $(ARFLAGS) $(MYICC)$(OBJSUFX) $(ICCLIB_LINK)  
 
 # Copy the ICC static library stub to the sdk directory

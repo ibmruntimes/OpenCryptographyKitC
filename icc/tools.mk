@@ -12,11 +12,10 @@
 #
 
 TOOLS =	 \
-   icclib_sa$(EXESUFX) \
-	GenRndData$(EXESUFX) \
+	$(SDK_DIR)/GenRndData$(EXESUFX) \
+	$(SDK_DIR)/GenRndData2$(EXESUFX) \
 	smalltest$(EXESUFX) \
 	smalltest4$(EXESUFX) \
-	GenRndData2$(EXESUFX) \
 	nist_algs$(EXESUFX) \
 	sha256x$(EXESUFX)
 
@@ -43,8 +42,6 @@ GENRNDFIPS_OBJS =  GenRndDataFIPS$(OBJSUFX) platform$(OBJSUFX) \
 	$(ASMOBJS)
 
 #- Build RND data generator executable
-# GENRND is either GenRdnData.exe (winxxx) or GenRndData
-# So rather than use generic target keep separate so can do different processing on windows
 
 #- Compile RNG data generator
 GenRndData$(OBJSUFX): tools/GenRndData.c 
@@ -52,14 +49,12 @@ GenRndData$(OBJSUFX): tools/GenRndData.c
 
 GenRndData: $(GENRND_OBJS) $(SLIBCRYPTO)
 	$(LD) $(LDFLAGS) $(GENRND_OBJS) $(LDLIBS) $(SLIBCRYPTO)
-	$(CP) GenRndData $(SDK_DIR)/
 
-GenRndData.exe: $(GENRND_OBJS) $(SLIBCRYPTO)
+GenRndData$(EXESUFX): $(GENRND_OBJS) $(SLIBCRYPTO)
 	$(LD) $(LDFLAGS) $(GENRND_OBJS) $(ICCLIB) $(LDLIBS) $(SLIBCRYPTO)
 
-$(SDK_DIR)/GenRndData.exe: GenRndData.exe
-	$(CP) GenRndData.exe $@
-	if [ -f GenRndData$(EXESUFX).manifest ]; then $(CP) GenRndData.exe.manifest $(SDK_DIR)/; fi
+$(SDK_DIR)/GenRndData$(EXESUFX): $(SDK_DIR) GenRndData$(EXESUFX)
+	$(CP) GenRndData$(EXESUFX) $@
 
 
 #- Compile hash check tool
@@ -75,50 +70,29 @@ sha256x.exe: $(SDK_DIR) sha256x$(OBJSUFX) $(SLIBCRYPTO)
 	$(CP) sha256x.exe $(SDK_DIR)/
 
 #- Build FIPS RND data generator executable
-# GENRNDFIPS is either GenRdnDataFIPS.exe (winxxx) or GenRndDataFIPS
-# So rather than use generic target keep separate so can do different processing on windows
 #- Compile RNG data generator
 #- Build RNG data generator executable
 
 
+# This version runs on the module (see iccpkg for step library version)
 #- Compile newer RNG data generator
 GenRndData2$(OBJSUFX): tools/GenRndData2.c $(SDK_DIR)/icc.h $(SDK_DIR)/icc_a.h $(SDK_DIR)/iccglobals.h
 	$(CC) $(CFLAGS) -I $(SDK_DIR) tools/GenRndData2.c
 
-GenRndData2: $(SDK_DIR) GenRndData2$(OBJSUFX) $(ICCLIB)
+GenRndData2$(EXESUFX): GenRndData2$(OBJSUFX) $(ICCLIB)
 	$(LD) $(LDFLAGS) GenRndData2$(OBJSUFX) $(ICCLIB) $(LDLIBS) 
-	$(CP) GenRndData2 $(SDK_DIR)/
 
+$(SDK_DIR)/GenRndData2$(EXESUFX): $(SDK_DIR) GenRndData2$(EXESUFX)
+	$(CP) GenRndData2$(EXESUFX) $@
 
-GenRndData2.exe: $(SDK_DIR) GenRndData2$(OBJSUFX) $(ICCLIB)
-	$(LD) $(LDFLAGS) GenRndData2$(OBJSUFX) $(ICCLIB) $(LDLIBS) 
-	$(CP) GenRndData2.exe $(SDK_DIR)/
 
 #- FIPS specific RNG data generator	
 
 GenRndDataFIPS$(OBJSUFX): tools/GenRndDataFIPS.c 
 	$(CC) $(CFLAGS) -I./ -I$(ZLIB_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(SDK_DIR) tools/GenRndDataFIPS.c  $(ASM_TWEAKS)
 
-GenRndDataFIPS : $(GENRNDFIPS_OBJS)
+GenRndDataFIPS$(EXESUFX) : $(GENRNDFIPS_OBJS)
 	$(LD) $(LDFLAGS) $(GENRNDFIPS_OBJS) $(LDLIBS)
-
-GenRndDataFIPS.exe : $(GENRNDFIPS_OBJS)
-	$(LD) $(LDFLAGS) $(GENRNDFIPS_OBJS) $(LDLIBS)
-
-
-#	
-#- Build an exectuable version of libicclib.so so we can debug the POST code
-#
-
-icclib_sa$(OBJSUFX): icclib.c loaded.c loaded.h tracer.h extsig.h $(SDK_DIR)/mystdint.h
-	$(CC) -DICCDLL_NAME="\"icclib_sa$(EXESUFX)\"" -DSTANDALONE_ICCLIB -DOPSYS="\"$(OPSYS)\"" -DMYNAME=icclib_sa$(VTAG) $(CFLAGS) \
-		 $(PQCINC) -I./ -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) icclib.c $(OUT)$@
-
-# note: ARGON in the module is disabled on some platforms because of blake2b symbol clash
-
-icclib_sa$(EXESUFX): icclib_sa$(OBJSUFX) $(ARGON) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) tmp/tmp/dummyfile extsig$(OBJSUFX) signer$(EXESUFX)
-	$(LD) $(LDFLAGS) icclib_sa$(OBJSUFX) $(ARGON) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) tmp/tmp/*$(OBJSUFX) $(LDLIBS) $(PQCLIBS)
-	$(OPENSSL_PATH_SETUP) ./signer$(EXESUFX) ICCLIB_SA.txt privkey.rsa -SELF -FILE icclib_sa$(EXESUFX) $(TWEAKS)
 
 
 #- Build ICC test executables

@@ -12,7 +12,6 @@
 //
 *************************************************************************/
 
-
 #ifndef HEADER_FIPS_PRNG_RAND_H
 #define HEADER_FIPS_PRNG_RAND_H
 

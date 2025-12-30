@@ -22,6 +22,20 @@ include $(ICC_ROOT)/icc/opensslver.mk
 include $(ICC_ROOT)/icc/icc_defs.mk
 include $(ICC_ROOT)/icc/platforms.mk
 
+.SUFFIXES:
+%.mk:
+	# no recipe - disabled
+%.c:
+	# no recipe - disabled
+%.h:
+	# no recipe - disabled
+%.lib:
+	# no recipe - disabled
+%.a:
+	# no recipe - disabled
+#Makefile:
+#	# no recipe - disabled
+
 # installed SDKs are outside of icc dir
 SDK_PATH=../../../..
 #OPENSSL_SDK_PATH=$(SDK_PATH)/openssl

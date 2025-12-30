@@ -40,10 +40,10 @@ $(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 # Java
 # $(JGSK_LIBNAME) is defined in gsk_crypto.mk
 
-$(JGSK_LIBNAME): $(JGSK_SDK)/lib $(JGSK_SDK)/debug jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
+$(JGSK_LIBNAME): $(JGSK_SDK)/lib $(JGSK_SDK)/debug jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
 		$(JTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) icc.res
-	$(SLD) $(SLDFLAGS) -DEBUG -PDB:$(JGSKLIB_B)_64.pdb jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
+	$(SLD) $(SLDFLAGS) -DEBUG -PDB:$(JGSKLIB_B)_64.pdb jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
 		$(JTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) $(EXPORT_FLAG)$(JCCPKG_EXPFILE) \
 		$(LDLIBS)
@@ -61,16 +61,16 @@ $(JGSK_LIBNAME): $(JGSK_SDK)/lib $(JGSK_SDK)/debug jgsk_wrap2$(OBJSUFX) $(JEX_OB
 	)
 
 # ICKC
-$(ICKC_LIBNAME): $(ICKC_SDK) ickc_wrap2$(OBJSUFX) \
+$(ICKC_LIBNAME): $(GSK_DIR) $(GSK_SDK) ickc_wrap2$(OBJSUFX) \
 		$(ICKCTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) icc.res
 	$(SLD) $(SLDFLAGS) -DEBUG -PDB:$(ICKCLIB_B)_64.pdb ickc_wrap2$(OBJSUFX) \
 		$(ICKCTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) $(EXPORT_FLAG)$(ICKCPKG_EXPFILE) \
 		$(LDLIBS)
-	$(CP) ickc*.lib $(ICKC_SDK)/
-	$(CP) ickc*.pdb $(ICKC_SDK)/
-	$(CP) $(PACKAGE_DIR)/iccsdk/icclib*.pdb $(ICKC_SDK)/
+	$(CP) ickc*.lib $(GSK_SDK)/
+	$(CP) ickc*.pdb $(GSK_SDK)/
+	$(CP) $(PACKAGE_DIR)/iccsdk/icclib*.pdb $(GSK_SDK)/
 	$(STRIP) $@
 	( \
 		if [ -e $(SIGN_COMMAND) ] ; then \
