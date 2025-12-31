@@ -40,10 +40,10 @@ $(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 # Java variant
 # $(JGSK_LIBNAME) is defined in gsk_crypto.mk
 
-$(JGSK_LIBNAME): $(JGSK_SDK)/lib $(JGSK_SDK)/debug jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
+$(JGSK_LIBNAME): $(JGSK_SDK)/lib $(JGSK_SDK)/debug jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
 		$(JTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) icc.res
-	$(SLD) $(SLDFLAGS) -DEBUG -PDB:$(JGSKLIB_B).pdb jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
+	$(SLD) $(SLDFLAGS) -DEBUG -PDB:$(JGSKLIB_B).pdb jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
 		$(JTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) $(EXPORT_FLAG)$(JCCPKG_EXPFILE) \
 		$(LDLIBS)

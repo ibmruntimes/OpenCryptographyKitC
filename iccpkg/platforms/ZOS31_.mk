@@ -43,13 +43,13 @@ $(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 	$(OLD_ICC_OBJ_CLEAN)
 
 # Java
-$(JGSK_LIBNAME): $(JGSK_SDK) jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
+$(JGSK_LIBNAME): $(JGSK_SDK) jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
 		$(JTIMER_OBJS) ../icc/csvquery.o \
 		$(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB)
 	if [ -e OLD_ICC/ZOS*/iccsdk/libicc.a ] ; then chtag -r OLD_ICC/ZOS*/iccsdk/libicc.a; fi
 	if [ -e OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt ] ; then chtag -c ISO8859-1 OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt; fi
-	$(SLD) $(SLDFLAGS) jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
+	$(SLD) $(SLDFLAGS) jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
 		$(JTIMER_OBJS) ../icc/csvquery.o \
 		$(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) \

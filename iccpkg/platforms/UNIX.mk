@@ -38,10 +38,10 @@ $(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 	$(OLD_ICC_OBJ_CLEAN)
 
 # Java
-$(JGSK_LIBNAME): $(JGSK_SDK)/debug $(JGSK_DIR) jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
+$(JGSK_LIBNAME): $(JGSK_SDK)/debug $(JGSK_DIR) jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
 		$(JTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB)
-	$(SLD) $(SLDFLAGS) jgsk_wrap2$(OBJSUFX) jexp$(OBJSUFX) \
+	$(SLD) $(SLDFLAGS) jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
 		$(JTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) $(EXPORT_FLAG)$(JCCPKG_EXPFILE) \
 		$(LDLIBS)
