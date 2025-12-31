@@ -162,7 +162,7 @@ SDK_HEADERS = $(GSK_SDK)/icc.h $(GSK_SDK)/icc_a.h $(GSK_SDK)/iccglobals.h $(GSK_
 # our local dks integration and test code
 # sigtest and kemtest comes from here
 pqc_test_build:
-	$(MAKE) -C pqc all
+	"$(MAKE)" -C pqc all
 
 # only run the pqc test if we have pqc support present
 ifeq ($(strip $(PQCLIBS)),)
@@ -368,6 +368,10 @@ $(ICC_ROOT)/doc/IBM_CKC.pdf:
 
 $(GSK_SDK)/IBM_CKC.pdf: $(GSK_SDK) $(ICC_ROOT)/doc/IBM_CKC.pdf
 	$(CP) $(ICC_ROOT)/doc/IBM_CKC.pdf $@
+
+# local alias directory names - deprecated and only used in this Makefile
+# These are the runtime directories (package/*gskit_crypto/)
+INST_DIR	= $(GSK_DIR)
 
 # if it is a no_legacy build then delete the C dir completely
 
@@ -661,6 +665,10 @@ $(GSK_OPENSSL): $(ICC_ROOT)/package/iccsdk/openssl$(EXESUFX)
 #$(JGSK_SDK)/Standard_International_Program_License_Agreement.pdf: $(JGSK_DIR) $(ICC_ROOT)/icc/Standard_International_Program_License_Agreement.pdf
 #	$(CP) $(ICC_ROOT)/icc/Standard_International_Program_License_Agreement.pdf $@
 #	chmod +w $@
+# local alias directory names - deprecated and only used in this Makefile
+# These are the runtime directories (package/*gskit_crypto/)
+JINST_DIR   = $(JGSK_DIR)
+
 # match runtime_setup_C
 
 Jruntime_setup_C: $(JINST_DIR)/C/icc/icclib/$(OLD_LIBICC) $(JINST_DIR)/C/icc/ReadMe.txt

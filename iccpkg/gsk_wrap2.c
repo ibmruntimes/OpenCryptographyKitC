@@ -139,6 +139,16 @@ typedef struct {
   int is_wchar; /* Set if we were initialized via ICC_InitW() */
 } WICC_CTX;
  
+/*! @brief This structure is anonymous as far as ICC users are
+  concerned. It holds per-context information plus in funcs a link to 
+  more detailed internal context
+*/
+struct ICC_t
+{
+  FUNC **funcs;  /*!< Pointer to the call table */
+  int dummy2;      /*!< Dummy to wake up the debugger */       
+};
+ 
 #if defined(__sun) || defined(__hpux)
 static int setenv(const char *name,const char *value,int overwrite)
 {
