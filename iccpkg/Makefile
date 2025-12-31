@@ -152,7 +152,7 @@ TARGETS = \
 	$(TIMER_OBJS) \
 	icctest$(EXESUFX) \
 	icctest_s$(EXESUFX) \
-	loadtest$(EXESUFX) GenRndData2$(EXESUFX) $(ICCPKG_PERF) \
+	GenRndData2$(EXESUFX) \
 	smalltest$(EXESUFX) \
 	$(JGSK_TARGETS) $(JSDK_TARGETS) \
 	$(ICKC_TARGETS) ICKCSDK_TARGETS

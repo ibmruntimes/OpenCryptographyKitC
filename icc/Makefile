@@ -1148,15 +1148,23 @@ nist_algs$(EXESUFX): nist_algs1$(OBJSUFX)
 
 #=============================== Code sign/verify    ==============================
 
+# Note that the signing key should be present - supplied by the build, not in repo.
+# this shows how one can be generated if required.
+
 #- stand alone signing tool
 privkey.rsa:
 	$(OPENSSL_PATH_SETUP) $(REALOPENSSL) genrsa -out privkey.rsa 2048
 
+# matching public key for signature checking
+# this shows how one can be derived from the private key if required.
+# include sanity check because ZOSa can muck up this file
+
 pubkey.h: privkey.rsa
 	$(OPENSSL_PATH_SETUP) $(REALOPENSSL) rsa -in privkey.rsa -outform PEM -RSAPublicKey_out > rsa_pub_key.pem
 	perl pem2c.pl rsa_pub_key.pem > pubkey.h
-	rm rsa_pub_key.pem
 	cat pubkey.h
+	grep "	0x30,0x82," pubkey.h
+	rm rsa_pub_key.pem
 
 signer$(OBJSUFX): extsig.c
 	$(CC) -DSTANDALONE -DOPSYS=\"$(OPSYS)\" $(CFLAGS) -I$(OSSLINC_DIR) extsig.c $(OUT)$@
@@ -1177,7 +1185,10 @@ status$(OBJSUFX): status.c status.h icclib.h
 	$(CC) $(CFLAGS)  -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) status.c
 
 #- Build ICC FIPS code
+# include a sanity check for the pubkey.h include file - should be DER encoding - we can get a broken one on ZOSa
 fips$(OBJSUFX): pubkey.h fips.c fips.h icclib.h iccerr.h $(PRNG_DIR)/fips-prng-RAND.h tracer.h 
+	cat pubkey.h
+	grep "	0x30,0x82," pubkey.h
 	$(CC) $(CFLAGS) -I./  -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) fips.c
 
 #- Compile the FIPS prng code
