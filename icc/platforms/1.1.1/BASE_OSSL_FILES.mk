@@ -84,6 +84,8 @@ E_OBJ = $(APP_DIR)/verify$(OBJSUFX)  \
 # What's missing here is anything that's platform specific assembler
 #
 
+#bn_small_factors_stub$(OBJSUFX) 
+
 BASE_OBJS = \
    a_bitstr$(OBJSUFX) a_d2i_fp$(OBJSUFX) a_digest$(OBJSUFX) a_dup$(OBJSUFX) a_gentm$(OBJSUFX) \
    a_i2d_fp$(OBJSUFX) a_int$(OBJSUFX) a_mbstr$(OBJSUFX) a_object$(OBJSUFX) a_octet$(OBJSUFX) a_print$(OBJSUFX) a_sign$(OBJSUFX) \
@@ -95,7 +97,7 @@ BASE_OBJS = \
    bn_exp2$(OBJSUFX) bn_gcd$(OBJSUFX) bn_gf2m$(OBJSUFX) bn_kron$(OBJSUFX) bn_lib$(OBJSUFX) bn_mod$(OBJSUFX) bn_mont$(OBJSUFX) bn_mul$(OBJSUFX) \
    bn_prime$(OBJSUFX) bn_x931p$(OBJSUFX) \
 	bn_print$(OBJSUFX) bn_rand$(OBJSUFX) bn_recp$(OBJSUFX) bn_shift$(OBJSUFX) bn_sqr$(OBJSUFX) bn_sqrt$(OBJSUFX) bn_word$(OBJSUFX) \
-   bn_rsa_fips186_4$(OBJSUFX) bn_small_factors_stub$(OBJSUFX) bn_const$(OBJSUFX) \
+   bn_rsa_fips186_4$(OBJSUFX) bn_const$(OBJSUFX) \
    bss_file$(OBJSUFX) bss_mem$(OBJSUFX) bss_null$(OBJSUFX) buf_err$(OBJSUFX) buffer$(OBJSUFX) \
    c_allc$(OBJSUFX) c_alld$(OBJSUFX) c_cfb64$(OBJSUFX) c_ecb$(OBJSUFX) c_ofb64$(OBJSUFX) c_skey$(OBJSUFX)  \
    cfb64ede$(OBJSUFX) cfb64enc$(OBJSUFX) cfb_enc$(OBJSUFX) cm_ameth$(OBJSUFX) cm_pmeth$(OBJSUFX) cmac$(OBJSUFX) \

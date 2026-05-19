@@ -130,7 +130,7 @@ static SP800_90STATE SP_HMAC_Instantiate(PRNG_CTX *ctx,
   HMAC_Final(pctx->ctx.hmac_ctx,pctx->T,&l);
   HMAC_CTX_cleanup(pctx->ctx.hmac_ctx);
   /* And erase any leaked data in this case, 
-     not necessary but easier than explaining why we shouldn't need to
+     not necessary but easier than explaining why we shouldn't need to 
   */
   memset(pctx->T,0,pctx->prng->OBL);
   SP_HMAC_Update(pctx,&seedDS);
