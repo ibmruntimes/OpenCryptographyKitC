@@ -8,12 +8,12 @@ $(ICC_RAND_OBJ): $(OSSLINC_DIR) icc_rand.c
 
 
 $(MYOPENSSL): $(SDK_DIR) openssl$(EXESUFX)
-	$(CP)  openssl$(EXESUFX) $@
+	$(CP) openssl$(EXESUFX) $@
 
 openssl$(OBJSUFX): ../$(OPENSSL_VER)/apps/openssl.c
 	$(CC) -DOPENSSL_NO_ENGINE $(CFLAGS) -I$(OSSLINC_DIR) -I$(OSSL_DIR)/apps/ -I$(OSSL_DIR) ../$(OPENSSL_VER)/apps/openssl.c
 
-openssl$(EXESUFX): openssl$(OBJSUFX) $(E_OBJ) $(SLIBCRYPTO) $(SLIBSSL) platform$(OBJSUFX)
+openssl$(EXESUFX): openssl$(OBJSUFX) Build_OSSL_Complete $(E_OBJ) $(SLIBCRYPTO) $(SLIBSSL) platform$(OBJSUFX)
 	$(LD) $(LDFLAGS) openssl$(OBJSUFX) platform$(OBJSUFX) $(E_OBJ) $(SLIBSSL) $(OPENSSL_LIBS) $(SLIBCRYPTO) $(LDLIBS)
 	$(STRIP) $@
 
