@@ -4,7 +4,7 @@
  Licensed under the Apache License 2.0 (the "License"). You may not use
  this file except in compliance with the License. You can obtain a copy
  in the file LICENSE in the source distribution.
- */
+*/
 /* Description: Check that FIPS / non - FIPS module is present and loadable
 */
 
@@ -117,6 +117,21 @@ int doTest(int fips)
           rv = ICC_ERROR;
        }
        else {
+          static const char expModuleName[] = "OpenCryptographyKitC";
+          value[0] = '\0';
+          retcode = ICC_GetValue(ICC_ctx, status, ICC_MODULE_NAME, value, ICC_VALUESIZE);
+          if (retcode == ICC_OK) {
+             printf("ICC module name [%s]\n", value);
+             if (memcmp(value, expModuleName, sizeof(expModuleName))) {
+                printf("ICC module name incorrect\n");
+                rv = ICC_FAILURE;
+             }
+          }
+          else {
+             printf("ICC NO module name\n");
+          }
+
+          value[0] = '\0';
           retcode = ICC_GetValue(ICC_ctx, status, ICC_FIPS_APPROVED_MODE, value, ICC_VALUESIZE);
           rv = check_status(status, "ICC_GetValue ICC_FIPS_APPROVED_MODE", __FILE__, __LINE__);
           if (retcode != ICC_OK) {
@@ -129,6 +144,7 @@ int doTest(int fips)
              rv = ICC_ERROR;
           }
           else {
+             value[0] = '\0';
              retcode = ICC_GetValue(ICC_ctx, status, ICC_VERSION, value, ICC_VALUESIZE);
              rv = check_status(status, "ICC_GetValue", __FILE__, __LINE__);
              if (retcode != ICC_OK) {

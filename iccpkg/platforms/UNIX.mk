@@ -33,7 +33,7 @@ $(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 	$(OLD_ICC_OBJ_AR)
 	$(AR) $(ARFLAGS) \
 		gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
-		$(TIMER_OBJS) $(ICC_ROOT)/icc/$(MYICC)$(OBJSUFX) $(OLD_ICC_OBJ)\
+		$(TIMER_OBJS) $(ICC_ROOT)/icc/$(MYICC)$(OBJSUFX) $(OLD_ICC_OBJ) \
 		$(STKPK11) $(addprefix $(ICC_ROOT)/icc/,$(ZLIB_OBJ))
 	$(OLD_ICC_OBJ_CLEAN)
 

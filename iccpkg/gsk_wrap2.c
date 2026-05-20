@@ -89,6 +89,10 @@
 #include "tracer.h"
 #include "icc_cdefs.h"
 
+#if defined(_MSC_VER)
+#define snprintf _snprintf
+#endif
+
 static int ok_status(ICC_STATUS *status);
 static int default_status(ICC_STATUS *status);
 static int truncated_status(ICC_STATUS *status);
@@ -138,7 +142,7 @@ typedef struct {
 #endif
   int is_wchar; /* Set if we were initialized via ICC_InitW() */
 } WICC_CTX;
- 
+
 /*! @brief This structure is anonymous as far as ICC users are
   concerned. It holds per-context information plus in funcs a link to 
   more detailed internal context
@@ -266,14 +270,25 @@ int ICC_LINKAGE ICC_GetValue(ICC_CTX *pcb,ICC_STATUS* status,ICC_VALUE_IDS_ENUM 
       default: /* String values, yet another case by case switch() */
 	switch(valueID) {
 	case ICC_VERSION:
-	  rv = ok_status(status);	  
-	  tmp = strlen(ICC_PRODUCT_VERSION);	  
+	  rv = ok_status(status);
+	  tmp = strlen(ICC_PRODUCT_VERSION);
 	  if(tmp >= valueLength) {
-	    rv = truncated_status(status); 
+	    rv = truncated_status(status);
 	  }
 	  strncpy(value,ICC_PRODUCT_VERSION,valueLength);
 	  break;
-	case ICC_INSTALL_PATH:
+   case ICC_MODULE_NAME:
+      {
+         static const char moduleName[] = "IBM Crypto for C";
+         rv = ok_status(status);
+         tmp = sizeof(moduleName);
+         if (tmp > valueLength) {
+            rv = truncated_status(status);
+         }
+         strncpy(value, moduleName, valueLength);
+      }
+      break;
+   case ICC_INSTALL_PATH:
 	  rv = ok_status(status);
 	  tmpp = calloc(1,ICC_VALUESIZE);
 	  if(NULL == tmpp) {
@@ -323,7 +338,7 @@ int ICC_LINKAGE ICC_GetValue(ICC_CTX *pcb,ICC_STATUS* status,ICC_VALUE_IDS_ENUM 
 void ICC_LINKAGE ICKC_GenerateRandomSeed(ICC_CTX* pcb, ICC_STATUS* status,
                                             int len, void* buffer)
 #else
-    void ICC_LINKAGE ICC_GenerateRandomSeed(ICC_CTX *pcb, ICC_STATUS *status,
+void ICC_LINKAGE ICC_GenerateRandomSeed(ICC_CTX *pcb, ICC_STATUS *status,
                                             int len, void *buffer) 
 #endif
 #endif
@@ -401,7 +416,7 @@ const char gskiccs_SCCSInfo[] =
     "@(#)FileVersion:      " ICC_PRODUCT_VERSION "\n"
     "@(#)LegalCopyright:   Licensed Materials - Property of IBM\n"
     "@(#)                  ICC\n"
-    "@(#)                  (C) Copyright IBM Corp. 2002,2018\n"
+    "@(#)                  (C) Copyright IBM Corp. 2002,2026\n"
     "@(#)                  All Rights Reserved. US Government Users\n"
     "@(#)                  Restricted Rights - Use, duplication or disclosure\n"
     "@(#)                  restricted by GSA ADP Schedule Contract with IBM \n"

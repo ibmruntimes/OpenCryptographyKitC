@@ -20,6 +20,10 @@
 #include <dlfcn.h>
 #endif
 
+#if defined(_MSC_VER)
+#define snprintf _snprintf
+#endif
+
 /* Define platform-specific macros for library handling */
 #ifdef _WIN32
 #define LOAD_LIBRARY(name) LoadLibraryExA(name, NULL, LOAD_WITH_ALTERED_SEARCH_PATH)
