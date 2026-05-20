@@ -45,7 +45,7 @@ GENRNDFIPS_OBJS =  GenRndDataFIPS$(OBJSUFX) platform$(OBJSUFX) \
 
 #- Compile RNG data generator
 GenRndData$(OBJSUFX): tools/GenRndData.c 
-	$(CC) $(CFLAGS) -I./ -I$(ZLIB_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(SDK_DIR) tools/GenRndData.c  $(ASM_TWEAKS)
+	$(CC) $(CFLAGS) -I./ -I$(ZLIB_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(SDK_DIR) tools/GenRndData.c $(ASM_TWEAKS)
 
 GenRndData: $(GENRND_OBJS) $(SLIBCRYPTO)
 	$(LD) $(LDFLAGS) $(GENRND_OBJS) $(LDLIBS) $(SLIBCRYPTO)
@@ -80,7 +80,7 @@ GenRndData2$(OBJSUFX): tools/GenRndData2.c $(SDK_DIR)/icc.h $(SDK_DIR)/icc_a.h $
 	$(CC) $(CFLAGS) -I $(SDK_DIR) tools/GenRndData2.c
 
 GenRndData2$(EXESUFX): GenRndData2$(OBJSUFX) $(ICCLIB)
-	$(LD) $(LDFLAGS) GenRndData2$(OBJSUFX) $(ICCLIB) $(LDLIBS) 
+	$(LD) $(LDFLAGS) GenRndData2$(OBJSUFX) $(ICCLIB) $(LDLIBS)
 
 $(SDK_DIR)/GenRndData2$(EXESUFX): $(SDK_DIR) GenRndData2$(EXESUFX)
 	$(CP) GenRndData2$(EXESUFX) $@
