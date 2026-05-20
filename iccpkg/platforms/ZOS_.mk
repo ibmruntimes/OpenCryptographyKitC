@@ -18,7 +18,7 @@ ifeq ($(strip $(IS_FIPS)),)
    MYICC = newicc
 else
    MYICC = icc
-endif	
+endif
 
 ZICCOBJ = ../icc/$(MYICC)$(OBJSUFX)
 
@@ -37,7 +37,7 @@ $(GSK_LIBNAME): $(GSK_SDK) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 	$(SLD) $(SLDFLAGS) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) ../icc/csvquery_64.o \
 		$(ZICCOBJ) $(MUPPET) \
-		$(STKPK11) $(ZLIB_LIB)  \
+		$(STKPK11) $(ZLIB_LIB) \
 		$(LDLIBS)
 	$(CP) $(GSKLIB_B)_64.x $(GSK_SDK)/
 	$(STRIP) $@

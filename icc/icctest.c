@@ -2773,8 +2773,7 @@ static int doJavaSecPKEYAPITests(ICC_CTX *icc_ctx)
       retcode = ICC_EVP_PKEY_set1_RSA(icc_ctx,pkey,rsa);
       pctx = ICC_EVP_PKEY_CTX_new(icc_ctx,pkey,NULL);
       retcode = ICC_EVP_PKEY_encrypt_init(icc_ctx,pctx);
-      /* EVP_PKEY_CTX_set_rsa_padding(ctx, pad); Is a macro */
-      ICC_EVP_PKEY_CTX_ctrl(icc_ctx,pctx,ICC_EVP_PKEY_RSA,-1,ICC_EVP_PKEY_CTRL_RSA_PADDING,ICC_RSA_NO_PADDING,NULL);
+      ICC_EVP_PKEY_CTX_set_rsa_padding(icc_ctx, pctx, ICC_RSA_NO_PADDING);
       OSSLE(icc_ctx);
       retcode = ICC_EVP_PKEY_encrypt_new(icc_ctx,pctx,NULL,&outlen,buf2,keylen/8);
       out = malloc(outlen);
@@ -2905,6 +2904,31 @@ int doDualTest() {
   retcode = ICC_GetValue(ICC_ctx1,status,ICC_VERSION,value,ICC_VALUESIZE);
   printf("ICC #2 version %s\n",value);
   print_cfg(ICC_ctx1,"    ");
+  memset(value, 0, sizeof(value));
+  {
+     static const char expModuleName[] = "IBM Crypto for C";
+     retcode = ICC_GetValue(ICC_ctx, status, ICC_MODULE_NAME, value, ICC_VALUESIZE);
+     if (retcode == ICC_OK) {
+        printf("ICC #1 module name [%s]\n", value);
+        if (memcmp(value, expModuleName, sizeof(expModuleName))) {
+           printf("ICC #1 module name incorrect\n");
+        }
+     }
+     else {
+        printf("ICC #1 NO module name\n");
+     }
+     memset(value, 0, sizeof(value));
+     retcode = ICC_GetValue(ICC_ctx1, status, ICC_MODULE_NAME, value, ICC_VALUESIZE);
+     if (retcode == ICC_OK) {
+        printf("ICC #2 module name [%s]\n", value);
+        if (memcmp(value, expModuleName, sizeof(expModuleName))) {
+           printf("ICC #2 module name incorrect\n");
+        }
+     }
+     else {
+        printf("ICC #2 NO module name\n");
+     }
+  }
   ICC_Cleanup(ICC_ctx,status);
   ICC_Cleanup(ICC_ctx1,status1);
 
@@ -3441,6 +3465,22 @@ int doUnitTest(const char* iccPath, int test,char *fips, int unicode)
         version = VString2(value);
         printf("ICC version %s\n", value);
         print_cfg(ICC_ctx, "    ");
+        {
+           static const char expModuleName[] = "OpenCryptographyKitC";
+           value[0] = '\0';
+           retcode = ICC_GetValue(ICC_ctx, status, ICC_MODULE_NAME, value, ICC_VALUESIZE);
+           if (retcode == ICC_OK) {
+              printf("ICC module name [%s]\n", value);
+              if (memcmp(value, expModuleName, sizeof(expModuleName))) {
+                 printf("ICC module name incorrect\n");
+                 error = 1;
+                 rv = ICC_FAILURE;
+              }
+           }
+           else {
+              printf("ICC NO module name\n");
+           }
+        }
       }
       check_stack(0);
       check_stack(1);

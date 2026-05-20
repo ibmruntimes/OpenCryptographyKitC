@@ -48,7 +48,7 @@ const char ICC_SCCSInfo[] =
     "@(#)FileVersion:      " ICC_PRODUCT_VERSION "\n"
     "@(#)LegalCopyright:   Licensed Materials - Property of IBM\n"
     "@(#)                  ICC\n"
-    "@(#)                  (C) Copyright IBM Corp. 2002,2018\n"
+    "@(#)                  (C) Copyright IBM Corp. 2002,2026\n"
     "@(#)                  All Rights Reserved. US Government Users\n"
     "@(#)                  Restricted Rights - Use, duplication or disclosure\n"
     "@(#)                  restricted by GSA ADP Schedule Contract with IBM Corp.\n"

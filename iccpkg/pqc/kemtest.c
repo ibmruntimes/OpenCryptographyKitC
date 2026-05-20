@@ -5,7 +5,7 @@
  in the file LICENSE in the source distribution.
  */
  
- /*
+/*
   kemtest.c
 */
 #include <stdio.h>
@@ -22,9 +22,9 @@
 #endif
 
 #if defined(_WIN32)
-#   include <windows.h>
+#include <windows.h>
 #else
-#   include <stdlib.h>
+#include <stdlib.h>
 #endif
 
 #if defined(JGSK_WRAP)
@@ -36,7 +36,7 @@
 #include "ickc_a.h"
 #endif
 #endif
-#   include "icc.h"
+#include "icc.h"
 
 /* We want to use PKCS1 and PKCS8 encodings for i2d/d2i */
 /* these are all independent bits that can be combined */
@@ -561,13 +561,13 @@ PQC_KEM_test(ICC_CTX* ctx, const char* algname, int verbose, int argc, const cha
          }
       }
       else {
-      if (verbose) {
-         printf("keygen\n");
-      }
-      if ((ret_val = KEMEVP_gen(ctx, algname, &pk, &sk, encdec)) != 0) {
-         printf("Error: KEMEVP_gen returned <%d>\n", ret_val);
-         return 1;
-      }
+         if (verbose) {
+            printf("keygen\n");
+         }
+         if ((ret_val = KEMEVP_gen(ctx, algname, &pk, &sk, encdec)) != 0) {
+            printf("Error: KEMEVP_gen returned <%d>\n", ret_val);
+            return 1;
+         }
       }
       if (verbose) {
          fprintf(fp_rsp, "pk encoding length = %d\n", (int)pk.der.len);
@@ -699,7 +699,7 @@ void tcb(const char* val1, const char* val2)
 /* Main function to parse arguments and execute KEM tests */
 int main(int argc, const char* argv[])
 {
-   const char* algname = NULL; 
+   const char* algname = NULL;
    const char* iccPath = NULL;
    kbuf pubKey = { 0,0, };
    kbuf priKey = { 0,0, };

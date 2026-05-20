@@ -66,7 +66,7 @@ endif
 ifeq ($(findstring VS2022, $(OPSYS)), VS2022)
 SIGN_COMMAND = ../../signwindowsfile.ksh
 else
-SIGN_COMMAND    = /build/build/scripts/signwindowsfile.ksh
+SIGN_COMMAND = /build/build/scripts/signwindowsfile.ksh
 endif
 
 # IBM Crypto for C perf tool
@@ -162,7 +162,7 @@ SDK_HEADERS = $(GSK_SDK)/icc.h $(GSK_SDK)/icc_a.h $(GSK_SDK)/iccglobals.h $(GSK_
 # our local dks integration and test code
 # sigtest and kemtest comes from here
 pqc_test_build:
-	"$(MAKE)" -C pqc all
+	"$(MAKE)" -C pqc all jcc_all ickc_all
 
 # only run the pqc test if we have pqc support present
 ifeq ($(strip $(PQCLIBS)),)
@@ -456,15 +456,15 @@ clean: clean_jgsk clean_ickc
 	-$(RM) *.o *.obj *.so *.dylib *.dll *.sl *.x *.lib
 	-$(RM) *.ilk *.manifest *.pdb
 	-$(RM) $(GSK_LIB)
-	-$(RM) 	$(GSK_LIB).unstripped
+	-$(RM) $(GSK_LIB).unstripped
 	-$(RM) delta.exp
-	-$(RM) 	API_html/*
+	-$(RM) API_html/*
 	-$(RM) -r $(GSK_SDK)
 	-$(RM) -r $(TMP_SRC) $(TMP_OBJS)
-	-$(RM) exports_old/*.exp exports_old/iccstepZOS.h
-	"$(MAKE)" -C TOTP clean
+	-$(RM) exports_old/*.exp exports_old/*.def exports_old/iccstepZOS.h
+	-"$(MAKE)" -C TOTP clean
 	-$(RM) Doxyfile
-	"$(MAKE)" -C pqc clean
+	-"$(MAKE)" -C pqc clean
 
 
 # Note: Need to rm after copy as Windows looks in the same directory as exe's
@@ -512,9 +512,12 @@ cache_test$(OBJSUFX): gsk_wrap2.c gsk_wrap2_a.c $(ICC_ROOT)/icc/loaded.c name_ca
 
 # GSK_LIB and ICCPKG_LIBS is coming from gsk_crypto.mk - references the step import library
 # Note different from icc/icctest which links direct to the module
+# Note need to copy icctest.c from ../icc/ because ../icc/icc.h and ../icc/icc_a.h (module) conflict with step library headers in $(GSK_SDK)
 
 icctest$(OBJSUFX): $(ICC_ROOT)/icc/icctest.c $(SDK_HEADERS)
-	$(CC) $(CFLAGS) -I$(GSK_SDK) -I$(ICC_ROOT)/icc -DICCPKG $(ICC_ROOT)/icc/icctest.c
+	$(CP) $(ICC_ROOT)/icc/icctest.c .
+	$(CC) $(CFLAGS) -I$(GSK_SDK) -I$(ICC_ROOT)/icc -DICCPKG icctest.c
+	$(RM) icctest.c
 
 icctest$(EXESUFX): icctest$(OBJSUFX) $(GSK_LIB)
 	$(LD) $(LDFLAGS) icctest$(OBJSUFX) $(ICCPKG_LIBS) $(LDLIBS)
@@ -527,7 +530,7 @@ $(GSK_SDK)/icctest$(EXESUFX): icctest$(EXESUFX)
 
 argon2_example$(EXESUFX): Argon2/argon2_example.c $(GSK_LIB)
 	$(CC) $(CFLAGS) -I./ -I$(GSK_SDK) Argon2/argon2_example.c 
-	$(LD) $(LDFLAGS) argon2_example$(OBJSUFX) $(ICCPKG_LIBS)  $(LDLIBS) 
+	$(LD) $(LDFLAGS) argon2_example$(OBJSUFX) $(ICCPKG_LIBS) $(LDLIBS) 
 
 smalltest$(EXESUFX): $(ICC_ROOT)/icc/tools/smalltest.c $(GSK_LIB)
 	$(CC) $(CFLAGS) -I./ -I$(GSK_SDK) -DICCPKG $(ICC_ROOT)/icc/tools/smalltest.c
@@ -583,7 +586,7 @@ GenRndData2$(OBJSUFX): $(ICC_ROOT)/icc/tools/GenRndData2.c $(GSK_LIB)
 	$(CC) $(CFLAGS) -I./ -I$(GSK_SDK) -DICCPKG $(ICC_ROOT)/icc/tools/GenRndData2.c
 
 GenRndData2$(EXESUFX): GenRndData2$(OBJSUFX)
-	$(LD) $(LDFLAGS) GenRndData2$(OBJSUFX) $(ICCPKG_LIBS) $(LDLIBS) 
+	$(LD) $(LDFLAGS) GenRndData2$(OBJSUFX) $(ICCPKG_LIBS) $(LDLIBS)
 
 $(GSK_SDK)/GenRndData2$(EXESUFX): $(GSK_SDK) GenRndData2$(EXESUFX)
 	$(CP) GenRndData2$(EXESUFX) $@
@@ -693,10 +696,10 @@ $(JINST_DIR)/C/icc/icclib/$(OLD_LIBICC): $(JINST_DIR)/C/icc/icclib
 Jruntime_setup_N: $(JINST_DIR)/N/icc/icclib/$(NEW_LIBICC) $(JINST_DIR)/N/icc/ReadMe.txt
 
 $(JINST_DIR)/N/icc/ReadMe.txt: $(JINST_DIR) $(RTE_DIR)/ReadMe.txt
-	-$(CP) $(RTE_DIR)/ReadMe.txt $@
+	$(CP) $(RTE_DIR)/ReadMe.txt $@
 
 $(JINST_DIR)/N/icc/icclib/$(NEW_LIBICC): $(JINST_DIR)/N/icc/icclib
-	-$(CP) $(RTE_DIR)/icclib/*  $(JINST_DIR)/N/icc/icclib/
+	$(CP) $(RTE_DIR)/icclib/*  $(JINST_DIR)/N/icc/icclib/
 
 
 Jruntime_setup: Jruntime_setup_C Jruntime_setup_N
@@ -728,7 +731,7 @@ jcctest$(OBJSUFX): $(ICC_ROOT)/icc/icctest.c $(SDK_HEADERS)
 	-$(RM) jcctest.c
 
 jcctest$(EXESUFX): jcctest$(OBJSUFX) $(JGSK_LIB)
-	$(LD) $(LDFLAGS) jcctest$(OBJSUFX) $(JCCPKG_LIBS) $(LDLIBS) 
+	$(LD) $(LDFLAGS) jcctest$(OBJSUFX) $(JCCPKG_LIBS) $(LDLIBS)
 
 $(JGSK_SDK)/bin/jcctest$(EXESUFX): $(JGSK_SDK)/bin jcctest$(EXESUFX)
 	$(CP) jcctest$(EXESUFX) $@
@@ -802,52 +805,56 @@ clean_ickc:
 
 
 # Tests. BVT
-# GSK_SETUP comes from gsk_crypto.mk and sets PATH for these tests
+# GSK_SETUP from gsk_crypto.mk can set the PATH for these tests if needed
 # ignored errors will be reported in the log
 # This is called from icc/Makefile:tests
-PATH:=..\package\gskit_crypto;$(PATH)
 
-# make sure we show the log even if the test fails
-log_init:
-	touch GSKIT_CRYPTO.log; $(RM) GSKIT_CRYPTO.log; touch GSKIT_CRYPTO.log
-log_cat:
-	cat GSKIT_CRYPTO.log
-	$(RM) GSKIT_CRYPTO.log
-log_rm:
-	-$(RM) GSKIT_CRYPTO.log
+.PHONY: jcc_log_init.% jcc_log_cat.% icc_log_init.% icc_log_cat.%
 
-tests: log_init chkiccload_test log_cat log_init icctest_test jcctest_test ickctest_test icctest_s_test log_cat pqc_tests
+jcc_log_init.%:
+	cd $(JGSK_DIR); touch GSKIT_CRYPTO.log; $(RM) GSKIT_CRYPTO.log; touch GSKIT_CRYPTO.log
+jcc_log_cat.%:
+	cd $(JGSK_DIR); cat GSKIT_CRYPTO.log; $(RM) GSKIT_CRYPTO.log
+
+icc_log_init.%:
+	cd $(GSK_DIR); touch GSKIT_CRYPTO.log; $(RM) GSKIT_CRYPTO.log; touch GSKIT_CRYPTO.log
+icc_log_cat.%:
+	cd $(GSK_DIR); cat GSKIT_CRYPTO.log; $(RM) GSKIT_CRYPTO.log
+
+tests: 	icc_log_init.1 chkiccload_test icc_log_cat.1 \
+		icc_log_init.2 icctest_test ickctest_test icctest_s_test icc_log_cat.2 \
+		jcc_log_init.1 jcctest_test jcc_log_cat.1 \
+		pqc_tests
 	@echo tests complete
 
+# Windows cannot run the ./icctest from ./iccpkg. Due to the DLL Search Order on Windows, it will always pickup ./iccpkg/gsk8iccs_64.dll (Application's Directory)
+# To be consistent we copy the test to the directory containing the ICC we wish to test on all platforms. e.g ../package/jgskit_crypto
+
+ifneq ("$(wildcard $(OPSYS)_MUPPET)", "")
+CHKICCLOAD_ARGS=-f
+else
+CHKICCLOAD_ARGS=-f -n
+endif
+
 chkiccload_test:
-	$(GSK_SETUP); ./chkiccload
+	$(CP) ./chkiccload$(EXESUFX) $(GSK_DIR); cd $(GSK_DIR); \
+	./chkiccload$(EXESUFX) $(CHKICCLOAD_ARGS) && $(RM) chkiccload$(EXESUFX)
 
 icctest_test:
-	$(GSK_SETUP); ./icctest
-
-#LINUX - default
-SYSLIBPATH=LD_LIBRARY_PATH
-ifeq ($(findstring WIN, $(OPSYS)), WIN)
-#WIN
-SYSLIBPATH=PATH
-endif
-ifeq ($(findstring AIX, $(OPSYS)), AIX)
-#AIX
-SYSLIBPATH=LIBPATH
-endif
-ifeq ($(findstring OSX, $(OPSYS)), OSX)
-#OSX
-SYSLIBPATH=DYLD_LIBRARY_PATH
-endif
+	$(CP) ./icctest$(EXESUFX) $(GSK_DIR); cd $(GSK_DIR); \
+	./icctest$(EXESUFX) && $(RM) icctest$(EXESUFX)
 
 jcctest_test:
-	cd $(JGSK_DIR); export $(SYSLIBPATH)=.; ../../iccpkg/jcctest
+	$(CP) ./jcctest$(EXESUFX) $(JGSK_DIR); cd $(JGSK_DIR); \
+	./jcctest$(EXESUFX) && $(RM) jcctest$(EXESUFX)
 
 ickctest_test:
-	cd $(GSK_DIR); export $(SYSLIBPATH)=.; ../../iccpkg/ickctest
+	$(CP) ./ickctest$(EXESUFX) $(GSK_DIR); cd $(GSK_DIR); \
+	./ickctest$(EXESUFX) && $(RM) ickctest$(EXESUFX)
 
 icctest_s_test:
-	$(GSK_SETUP); ./icctest_s
+	$(CP) ./icctest_s$(EXESUFX) $(GSK_DIR); cd $(GSK_DIR); \
+	./icctest_s$(EXESUFX) && $(RM) icctest_s$(EXESUFX)
 
 #
 # ---------------- End of JCEPlus stanzas --------------------------
@@ -923,7 +930,7 @@ show_config:
 	echo "OSSLINC_DIR	      = $(OSSLINC_DIR)"
 	echo
 	echo "Set in gsk_crypto.mk - libs for current GSkit"
-	echo "GSKLIB		      = $(GSKLIB)"
+	echo "GSKLIB		    = $(GSKLIB)"
 	echo "GSK_LIBNAME       = $(GSK_LIBNAME)"
 	echo "GSK_LIB           = $(GSK_LIB)"
 	echo "GSK_LIB_STATIC    = $(GSK_LIB_STATIC)"

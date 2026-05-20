@@ -50,7 +50,7 @@
 #define V1_1_1 1
 
 #define ICCLIB 1
-/* note - not icc.h ! */
+/* note this is the module icc_a.h - not icc.h or step library icc_a.h ! */
 #include "icc_a.h"
 #undef ICCLIB
 #include "icc_common.h"
@@ -688,7 +688,7 @@ void OpenCheckFiles(FILE **sigfile,FILE **self)
   strncat(tmppath,"/",MAX_PATH);
   ptr = tmppath + strlen(tmppath);
 #if defined(STANDALONE_ICCLIB)
-  strncat(tmppath,"ICCLIB_SA.txt",MAX_PATH); 
+  strncat(tmppath,"ICCLIB_SA.txt",MAX_PATH);
 #else
   strncat(tmppath,"ICCSIG.txt",MAX_PATH);
 #endif
@@ -696,7 +696,7 @@ void OpenCheckFiles(FILE **sigfile,FILE **self)
   MARK(tmppath,(*sigfile) != NULL ? "Opened ICCSIG.txt": "Failed Open ICCSIG.txt");
   /** \induced 150. Signature test, fopen() failed on external file
       in ASCCI mode. (Differs from 151 only on Windows platforms)
-   */    
+   */
   if(150 == icc_failure) {
     fclose(*sigfile);
     *sigfile = NULL;
@@ -705,11 +705,11 @@ void OpenCheckFiles(FILE **sigfile,FILE **self)
 #if defined(_WIN32)
   if(NULL == *sigfile) {
     ptr = NULL;
-    FUNCTION_NAME(MYNAME,_pathW)(tmppathW,MAX_PATH-20); 
+    FUNCTION_NAME(MYNAME,_pathW)(tmppathW,MAX_PATH-20);
     wcsncat(tmppathW,L"/",MAX_PATH);
     wptr = tmppathW + wcslen(tmppathW);
 #   if defined(STANDALONE_ICCLIB)
-    wcsncat(tmppathW,L"ICCLIB_SA.txt",MAX_PATH); 
+    wcsncat(tmppathW,L"ICCLIB_SA.txt",MAX_PATH);
 #   else
     wcsncat(tmppathW,L"ICCSIG.txt",MAX_PATH);
 #   endif    
@@ -1341,6 +1341,11 @@ int SetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
                 (char *)"Attempted to set an unsettable value ID", __FILE__,
                 __LINE__);
     break;
+  case ICC_MODULE_NAME:
+     SetStatusLn(pcb, status, ICC_ERROR, ICC_UNSUPPORTED_VALUE_ID,
+        (char*)"Attempted to set an unsettable value ID - ICC_MODULE_NAME", __FILE__,
+        __LINE__);
+     break;
   case ICC_MEMORY_ALLOC:
     SetStatusLn(pcb, status, ICC_WARNING, ICC_VALUE_NOT_SET,
                 (char *)"Memory callbacks are unsafe (function deprecated, "
@@ -1561,9 +1566,21 @@ int GetValue (ICClib * pcb, ICC_STATUS * status,ICC_VALUE_IDS_ENUM valueID,
      MARK("ICC_INSTALL_PATH", (NULL != value) ? (char *)value : "");
      break;
    case ICC_VERSION:
+     if (valueLength > sizeof(Global.version))
+         valueLength = sizeof(Global.version);
      strncpy ((char *) value, Global.version,valueLength-1);
      ((char *)value)[valueLength - 1] = '\0';
      MARK("ICC_VERSION",(char *)value);
+     break;
+   case ICC_MODULE_NAME:
+      {
+         static const char moduleName[] = "OpenCryptographyKitC";
+         if (valueLength > sizeof(moduleName))
+            valueLength = sizeof(moduleName);
+         strncpy((char*)value, moduleName, valueLength - 1);
+         ((char*)value)[valueLength - 1] = '\0';
+         MARK("ICC_MODULE_NAME", (char*)value);
+      }
      break;
    case ICC_MEMORY_ALLOC:
      *(void **) value = NULL;
@@ -3313,9 +3330,9 @@ d2i_PQCPrivateKey(EVP_PKEY* pkey, const unsigned char** pp, long length)
 #endif
 
 #ifdef LIBOQS
-#define ICC_SIG_alg_dilithium_2 OQS_SIG_alg_dilithium_2
-#define ICC_SIG_alg_dilithium_3 OQS_SIG_alg_dilithium_3
-#define ICC_SIG_alg_dilithium_5 OQS_SIG_alg_dilithium_5
+#define ICC_SIG_alg_dilithium_2 OQS_SIG_alg_ml_dsa_44
+#define ICC_SIG_alg_dilithium_3 OQS_SIG_alg_ml_dsa_65
+#define ICC_SIG_alg_dilithium_5 OQS_SIG_alg_ml_dsa_87
 #else
 #define ICC_SIG_alg_dilithium_2 "dilithium_2"
 #define ICC_SIG_alg_dilithium_3 "dilithium_3"

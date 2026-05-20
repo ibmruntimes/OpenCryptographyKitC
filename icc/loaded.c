@@ -244,7 +244,7 @@ static char *gskiccs8_loaded_from_i(struct ld_info *dllinfo,int entries)
   char  *dirName = NULL;  /*this library's initial directory name 
 			    (may be relative) */
   char  *fname = NULL;    /*this library's full path name */
-  char *result = NULL;    
+  char *result = NULL;
   int sts = 0;
   int foundit = 0; /* Set to 1 if we can actually locate a path */
   char *rprv = NULL;

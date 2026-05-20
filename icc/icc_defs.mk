@@ -22,9 +22,18 @@ DEFAULT_debug_FILES    = icclib$(VTAG).pdb openssl.pdb vc90.pdb \
 			$(OSSL_DIR)/out32dll/libeay32.pdb 
 DEFAULT_MANIFESTS      =
 
-OQS_K_ALGS = KEM_kyber_512;KEM_kyber_768;KEM_kyber_1024
-OQS_D_ALGS = SIG_dilithium_2;SIG_dilithium_3;SIG_dilithium_5
-OQS_S_ALGS = SIG_sphincs_shake_128s_simple;SIG_sphincs_shake_128f_simple;SIG_sphincs_shake_192s_simple;SIG_sphincs_shake_192f_simple;SIG_sphincs_shake_256s_simple;SIG_sphincs_shake_256f_simple;SIG_sphincs_sha2_128s_simple;SIG_sphincs_sha2_128f_simple;SIG_sphincs_sha2_192s_simple;SIG_sphincs_sha2_192f_simple;SIG_sphincs_sha2_256s_simple;SIG_sphincs_sha2_256f_simple
+#
+#cd ../liboqs && cmake -G "Unix Makefiles" -DOQS_MINIMAL_BUILD="KEM_kyber_512;KEM_kyber_768;KEM_kyber_1024;SIG_ml_dsa_44;SIG_ml_dsa_65;SIG_ml_dsa_87;SIG_sphincs_shake_128s_simple;SIG_sphincs_shake_128f_simple;SIG_sphincs_shake_192s_simple;SIG_sphincs_shake_192f_simple;SIG_sphincs_shake_256s_simple;SIG_sphincs_shake_256f_simple;SIG_sphincs_sha2_128s_simple;SIG_sphincs_sha2_128f_simple;SIG_sphincs_sha2_192s_simple;SIG_sphincs_sha2_192f_simple;SIG_sphincs_sha2_256s_simple;SIG_sphincs_sha2_256f_simple" -DOQS_BUILD_ONLY_LIB=ON -DOQS_USE_OPENSSL=OFF .
+#
+
+#OQS_K_ALGS = KEM_kyber_512;KEM_kyber_768;KEM_kyber_1024;
+OQS_K_ALGS = KEM_ml_kem_768;KEM_ml_kem_768;KEM_ml_kem_1024
+#OQS_D_ALGS = SIG_dilithium_2;SIG_dilithium_3;SIG_dilithium_5
+OQS_D_ALGS = SIG_ml_dsa_44;SIG_ml_dsa_65;SIG_ml_dsa_87
+#OQS_S_ALGS = SIG_sphincs_shake_128s_simple;SIG_sphincs_shake_128f_simple;SIG_sphincs_shake_192s_simple;SIG_sphincs_shake_192f_simple;SIG_sphincs_shake_256s_simple;SIG_sphincs_shake_256f_simple;
+#OQS_S_ALGS += SIG_sphincs_sha2_128s_simple;SIG_sphincs_sha2_128f_simple;SIG_sphincs_sha2_192s_simple;SIG_sphincs_sha2_192f_simple;SIG_sphincs_sha2_256s_simple;SIG_sphincs_sha2_256f_simple
+OQS_S_ALGS = SIG_slh_dsa_pure_shake_128s;SIG_slh_dsa_pure_shake_128f;SIG_slh_dsa_pure_shake_192s;SIG_slh_dsa_pure_shake_192f;SIG_slh_dsa_pure_shake_256s;SIG_slh_dsa_pure_shake_256f;
+OQS_S_ALGS += SIG_slh_dsa_pure_sha2_128s;SIG_slh_dsa_pure_sha2_128f;SIG_slh_dsa_pure_sha2_192s;SIG_slh_dsa_pure_sha2_192f;SIG_slh_dsa_pure_sha2_256s;SIG_slh_dsa_pure_sha2_256f
 OQS_FLAGS = -DOQS_MINIMAL_BUILD="$(OQS_K_ALGS);$(OQS_D_ALGS);$(OQS_S_ALGS)" -DOQS_BUILD_ONLY_LIB=ON -DOQS_USE_OPENSSL=OFF
 # ICC is going to link the static lib. But applications normally link to the .dll. There is no way to build both at once so uncomment this line to get .so/.dll
 #OQS_FLAGS =+ -DBUILD_SHARED_LIBS=ON 
@@ -60,7 +69,7 @@ $(OPSYS)_MANIFESTS      = $(DEFAULT_MANIFESTS)
 
 #LIBOQS stuff
 
-LIBOQS_VER=-0.10.0
+LIBOQS_VER=-0.15.0
 
 WIN32_LIBOQS_LIB_release=Release
 WIN32_LIBOQS_LIB_debug=Debug
@@ -123,7 +132,7 @@ PQC_TESTS_LIBDKS=tests_dks
 # This just enables it per platform. PQC=xxx selects the support
 
 #PQC will be LIBDKS LIBOQS or undefined
-# default to LIBDKS where PQC is enabled, set PQC=NONE on command line to disable
+# default to LIBOQS where PQC is enabled, set PQC=LIBDKS or PQC=NONE on command line to change
 PQC=LIBDKS
 
 LINUX_PQCLIBS=$(PQCLIBS_$(PQC))
@@ -385,8 +394,14 @@ WIN64_VS2022_OSSLDLL_NAME   = $(WIN32_OSSLDLL_NAME)
 WIN64_VS2022_MY_OSSLDLL_NAME   = $(WIN32_MY_OSSLDLL_NAME)
 #WIN64_VS2022_OSSLINC_DIR    = $(OSSL_DIR)/inc32
 WIN64_VS2022_OSSLINC_DIR    = $(OSSL_DIR)/include
-WIN64_VS2022_BUILD_OSSL     = platforms\$(OPENSSL_LIBVER)\b64_VS2022.bat $(OPENSSL_VER) $(OPENSSL_$(CONFIG)_FLAG)
-WIN64_VS2022_CLEAN_OSSL     = rm $(OSSL_DIR)/*.dll; rm $(OSSL_DIR)/*.ilk ; rm $(OSSL_DIR)/*/*.obj ; rm $(OSSL_DIR)/*/*/*.obj ; find . -name \*.obj -type f -delete ; rm openssl.c
+WIN64_VS2022_BUILD_OSSL     = cd $(OSSL_DIR); perl Configure VC-WIN64A $(OSSL_FLAGS) && ( export MAKE=nmake ; export MAKEFLAGS= ; nmake ) && \
+( mkdir tmp32dll ; \
+for x in crypto ms apps ssl crypto/async/arch crypto/ec/curve448 crypto/ec/curve448/arch_32/ ; do cp $$x/*.obj tmp32dll/ ; done ; \
+for x in crypto/*/*.obj ; do cp $$x tmp32dll/ ; done ; \
+for x in ssl/*/*.obj ; do cp $$x tmp32dll/ ; done )
+
+#platforms/$(OPENSSL_LIBVER)/b64_VS2022.sh $(OPENSSL_VER) $(OPENSSL_$(CONFIG)_FLAG)
+WIN64_VS2022_CLEAN_OSSL     = rm $(OSSL_DIR)/*.dll; rm $(OSSL_DIR)/*.ilk ; rm $(OSSL_DIR)/*/*.obj ; rm $(OSSL_DIR)/*/*/*.obj ; find $(OSSL_DIR) -name \*.obj -type f -delete ; rm openssl.c
 WIN64_VS2022_release_OSSL_SUFFIX  =
 WIN64_VS2022_debug_OSSL_SUFFIX    =
 WIN64_VS2022_release_EXPORT  = export OSSL_RELEASE=1

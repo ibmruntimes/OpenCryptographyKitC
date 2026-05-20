@@ -7,8 +7,8 @@
 *************************************************************************/
 
 /*
-// Description:
-//    This incoporates ICC into the error facilities of openSSL. 
+// Description:                
+//    This incoporates ICC into the error facilities of openSSL.   
 */
 
 #ifndef INCLUDED_ICCERR

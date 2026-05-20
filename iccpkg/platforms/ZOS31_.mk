@@ -16,7 +16,7 @@ $(GSK_LIBNAME): $(GSK_SDK) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 	$(SLD) $(SLDFLAGS) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) ../icc/csvquery.o \
 		$(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
-		$(STKPK11) $(ZLIB_LIB)  \
+		$(STKPK11) $(ZLIB_LIB) \
 		$(LDLIBS)
 	$(CP) $(GSKLIB_B).x $(GSK_SDK)/
 	$(STRIP) $@
@@ -36,9 +36,9 @@ $(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
 	if [ -e OLD_ICC/ZOS*/iccsdk/libicc.a ] ; then chtag -r OLD_ICC/ZOS*/iccsdk/libicc.a; fi
 	if [ -e OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt ] ; then chtag -c ISO8859-1 OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt; fi
 	$(OLD_ICC_OBJ_AR)
-	$(AR) $(ARFLAGS)  \
+	$(AR) $(ARFLAGS) \
 		gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
-		$(TIMER_OBJS) $(ICC_ROOT)/icc/$(MYICC)$(OBJSUFX) $(OLD_ICC_OBJ)\
+		$(TIMER_OBJS) $(ICC_ROOT)/icc/$(MYICC)$(OBJSUFX) $(OLD_ICC_OBJ) \
 		$(STKPK11) $(addprefix $(ICC_ROOT)/icc/,$(ZLIB_OBJ)) ../icc/csvquery.o
 	$(OLD_ICC_OBJ_CLEAN)
 

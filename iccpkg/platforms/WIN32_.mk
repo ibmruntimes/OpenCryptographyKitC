@@ -77,13 +77,13 @@ $(ICKC_LIBNAME): $(GSK_DIR) $(GSK_SDK) ickc_wrap2$(OBJSUFX) \
 			echo "Authenticode signing $@" ; \
 			$(SIGN_COMMAND) $@ ; \
 		else \
-			echo " $(SIGN_COMMAND) is missing skip signing $@" ;\
-		fi ;\
+			echo " $(SIGN_COMMAND) is missing skip signing $@" ; \
+		fi ; \
 	)
 
 cache_test$(EXESUFX): cache_test$(OBJSUFX) exp$(OBJSUFX) \
 		$(TIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
-		$(STKPK11) $(ZLIB_LIB) 
+		$(STKPK11) $(ZLIB_LIB)
 	$(LD) cache_test$(OBJSUFX) exp$(OBJSUFX) \
 		$(TIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(STKPK11) $(ZLIB_LIB) \

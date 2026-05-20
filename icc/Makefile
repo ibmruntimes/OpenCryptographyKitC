@@ -47,7 +47,7 @@ OFFICIAL_CFLAGS = -DICC_OFFICIAL_BUILD -DVTAG=$(VTAG)
 ifeq ($(findstring VS2022, $(OPSYS)), VS2022)
 SIGN_COMMAND = ../../signwindowsfile.ksh
 else
-SIGN_COMMAND    = /build/build/scripts/signwindowsfile.ksh
+SIGN_COMMAND = /build/build/scripts/signwindowsfile.ksh
 endif
 
 
@@ -155,7 +155,7 @@ help:
 	@echo make targets:
 	@echo "   create_all - clean_all - scrubbed, create_all_no_legacy, create_all_FIPS"
 	@echo "        e.g: make -C icc OPSYS=WIN64_VS2022 CONFIG=debug create_all"
-	@echo "        PQC=NONE, PQC=LIBOQS, PQC= (default LIBDKS)"
+	@echo "        PQC=NONE, PQC=LIBDKS, PQC= (default LIBOQS)"
 	@echo    set_icc_version
 	@echo         e.g: 'make ... ICC_VERSION_VER=x ICC_VERSION_REL=y ICC_VERSION_MOD=z set_icc_version' to get "x.y.z" as version number
 	@echo    build_all
@@ -182,7 +182,7 @@ API_DIR = platforms/$(OPENSSL_LIBVER)/API
 # tmp/dummyfile - ref platforms/1.1.1/*.mk - triggers object extract of openssl static lib $(SLIBCRYPTO)
 # MYOPENSSL is our local copy of openssl static linked - triggers OpenSSL build
 
-TARGETS = $(MYOPENSSL) tmp/dummyfile  \
+TARGETS = $(MYOPENSSL) tmp/dummyfile \
 	$(DELTA) \
 	$(ICCDLL_NAME) \
 	$(ICCDLL) \
@@ -240,7 +240,7 @@ create_openssl: $(ICC_ROOT)/openssl_source/$(OPENSSL_VER)-icc.tar.gz
 	   cd .. ; \
 	   rm -rf x; mkdir x; cd x; \
 	   tar xzf ../openssl_source/$(OPENSSL_VER)-icc.tar.gz ; \
-	   sleep 1; \
+	   sleep 1 ; \
 	   mv openssl ../$(OPENSSL_VER) ; \
 	   chmod +x ../$(OPENSSL_VER)/Configure ; \
 	   cd ..; \
@@ -493,7 +493,7 @@ $(ICC_ROOT)/liboqs/CMakeLists.txt :
 		mv liboqs$(LIBOQS_VER)/* . ; mv liboqs$(LIBOQS_VER)/.* . ; \
 		rmdir liboqs$(LIBOQS_VER) ; \
 	else \
-		git clone https://github.com/open-quantum-safe/liboqs.git --depth 1 --branch 0.14.0 $(ICC_ROOT)/liboqs ; \
+		git clone https://github.com/open-quantum-safe/liboqs.git --depth 1 --branch 0.15.0 $(ICC_ROOT)/liboqs ; \
 		echo liboqs > $(ICC_ROOT)/liboqs/log.txt ; \
 		git -C $(ICC_ROOT)/liboqs log >> $(ICC_ROOT)/liboqs/log.txt ; \
 	fi
@@ -505,7 +505,7 @@ $(ICC_ROOT)/liboqs$(LIBOQS_VER).tar.gz: create_oqs Makefile
 	find $(ICC_ROOT)/liboqs -name ".gitattributes" -exec rm {} +
 	find $(ICC_ROOT)/liboqs -name ".travis" -exec rm {} +
 	find $(ICC_ROOT)/liboqs -name "*.yml" -exec rm {} +
-	tar czf $(ICC_ROOT)/liboqs$(LIBDKS_VER).tar.gz $(ICC_ROOT)/liboqs
+	tar czf $(ICC_ROOT)/liboqs$(LIBOQS_VER).tar.gz $(ICC_ROOT)/liboqs
 
 rm_liboqs_backup:
 	$(RM) $(ICC_ROOT)/liboqs$(LIBOQS_VER).tar.gz
@@ -564,7 +564,7 @@ $(NOSHIP_RTE_DIR): $(NOSHIP_DIR)
 $(NOSHIP_ICC_RTE_DIR): $(NOSHIP_RTE_DIR)
 	$(MKDIR) $@
 
-create_dirs: $(NOSHIP_DIR) $(NOSHIP_RTE_DIR) $(NOSHIP_ICC_RTE_DIR) $(SDK_DIR) $(ICC_RTE_DIR) $(OSSL_RTE_DIR) exports $(ICC_ROOT)/iccpkg/exports
+create_dirs: $(NOSHIP_DIR) $(NOSHIP_RTE_DIR) $(NOSHIP_ICC_RTE_DIR) $(SDK_DIR) $(ICC_RTE_DIR) $(OSSL_RTE_DIR) exports $(ICC_ROOT)/iccpkg/exports $(ICC_ROOT)/iccpkg/exports_old
 
 # Forces a rebuild in case we have a leftover .o or .exe from create_all from another system
 clean_iccVdump:
@@ -589,6 +589,9 @@ exports:
 $(ICC_ROOT)/iccpkg/exports:
 	$(MKDIR) $@
 
+$(ICC_ROOT)/iccpkg/exports_old:
+	$(MKDIR) $@
+
 #- Build and run the code generator if necsssary
 #- We typically only do this on one (fast) platform as setup for the
 #- builds. Then copy the populated source tree to the other build machines
@@ -597,6 +600,7 @@ ICCencapsulator.class: ICCencapsulator.java
 	javac ICCencapsulator.java
 
 # the create_all_* needs to be ran manually
+# create_all is part of the prebuild. If timestamps for functions.txt are changed in the copy then this will be triggered.
 icc_a.h icc_a.c icclib_a.h icclib_a.c: functions.txt
 	@echo please make create_all
 	false
@@ -825,7 +829,7 @@ clean_all: clean_openssl clean clean_tools clean_pqc clean_argon
 	-$(RM) *.0
 	-$(CLEAN400_ICC)
 	-$(CLEAN400_OSSL)
-	-$(CLEAN400_MODS)	
+	-$(CLEAN400_MODS)
 
 #- will need a create_all (includes patching) to get it back
 remove_openssl:
@@ -834,8 +838,7 @@ remove_openssl:
 #- Clean just OpenSSL
 clean_openssl:
 	-$(CLEAN_OSSL)
-	-$(RM) tmp/tmp/*
-	-$(RM) tmp/*$(OBJSUFX) tmp/dummyfile
+	-$(RM) -r tmp tmp32dll
 	if [ -e Build_OSSL_Complete ] ; then rm Build_OSSL_Complete ; fi
 
 
@@ -846,7 +849,8 @@ clean: clean_perf clean_pkcs11 clean_iccpkg clean_icc clean_icc_test
 clean_icc:
 	-$(RM) $(TARGETS) $(LIBOBJS) $(argon2_obj) *.o *.obj $(EXTRA_FILES) $(SDK_DIR)/*.h $(ASMOBJS)
 	-$(RM) ./openssl$(EXESUFX) $(SHLPRFX)icclib$(SHLSUFX) $(STLPRFX)icc$(STLSUFX)
-	-$(RM) *.so *.dylib *.dll *.sl *.x *.lib
+	-$(RM) *.so *.dylib *.dll *.sl *.x *.lib *.exp
+	-$(RM) create*.0
 	-$(RM) aes_gcm.* aes_ccm.* nist_algs1.c
 	-$(RM) delta.exp
 	-$(RM) ICCTEST_BUILT
@@ -861,7 +865,7 @@ clean_icc:
 	-find $(ICC_ROOT)/msvc -name "*.user" -exec rm {} +
 
 clean_icc_test:
-	if [ -d $(ICC_ROOT)/icc_test/ ] ; then \
+	-if [ -d $(ICC_ROOT)/icc_test/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
 		"$(MAKE)" -C $(ICC_ROOT)/icc_test clean ; \
 	fi
@@ -871,19 +875,19 @@ clean_tools:
 	-$(RM) $(TOOLS)
 
 clean_perf:
-	if [ -d $(ICC_ROOT)/iccspeed/ ] ; then \
+	-if [ -d $(ICC_ROOT)/iccspeed/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
 		"$(MAKE)" -C $(ICC_ROOT)/iccspeed clean ; \
 	fi
 
 clean_pkcs11:
-	if [ -d $(ICC_ROOT)/pk11/ ] ; then \
+	-if [ -d $(ICC_ROOT)/pk11/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
 		"$(MAKE)" -C $(ICC_ROOT)/pk11 clean ; \
 	fi
 
 clean_iccpkg:
-	if [ -d $(ICC_ROOT)/iccpkg/ ] ; then \
+	-if [ -d $(ICC_ROOT)/iccpkg/ ] ; then \
 		unset MAKEOVERRIDES MAKELEVEL MAKEFILES ; \
 		"$(MAKE)" -C $(ICC_ROOT)/iccpkg clean ; \
 	fi
@@ -891,9 +895,9 @@ clean_iccpkg:
 #- Clean out everything including the autogenerated files
 # Will need a create_all after this to get openssl back
 
-scrubbed: clean clean_libArgon
-	-$(RM) $(AUTOGEN) exports/* $(ICC_ROOT)/iccpkg/exports/* ICCencapsulator.class
-	-$(RM) -r $(OSSL_DIR)
+scrubbed: clean clean_libArgon remove_openssl
+	-$(RM) $(AUTOGEN) exports/* $(ICC_ROOT)/iccpkg/exports/* $(ICC_ROOT)/iccpkg/exports_old/* ICCencapsulator.class
+	-$(RM) -r $(ZLIB_DIR) $(ICC_ROOT)/pkcs11
 
 #- Build ICC package files (SDK & RTE)
 package_all: $(ICCSDK) $(ICCRTE)
@@ -935,13 +939,13 @@ TRNG_OBJS = timer_entropy$(OBJSUFX) timer_fips$(OBJSUFX) \
 #	$(CP) $(ICC_ROOT)/iccpkg/DilKyb/headers/mystdint.h $@
 
 # List of objs - minus the trigger for exec on load in a shared object
-LIBOBJS1 =   fips$(OBJSUFX)  \
+LIBOBJS1 = fips$(OBJSUFX) \
 	platform$(OBJSUFX) \
 	iccerr$(OBJSUFX) status$(OBJSUFX) \
 	fips-prng-RAND$(OBJSUFX) fips-prng-err$(OBJSUFX) \
 	SP800-90$(OBJSUFX) \
 	SP800-90HashData$(OBJSUFX) \
-	ds$(OBJSUFX)  \
+	ds$(OBJSUFX) \
 	SP800-90Cipher$(OBJSUFX) utils$(OBJSUFX) \
 	SP800-90HMAC$(OBJSUFX) \
 	SP800-108$(OBJSUFX) \
@@ -956,21 +960,22 @@ LIBOBJS1 =   fips$(OBJSUFX)  \
 #- define the set of objects that end up in the ICC shared library
 #- OSSL_XTRA_OBJ are files that massage the OpenSSL API to preserve
 #- the ICC API across releases
-LIBOBJS =   $(LIBOBJS1) platfsl$(OBJSUFX) $(OSSL_XTRA_OBJ)
+LIBOBJS = $(LIBOBJS1) platfsl$(OBJSUFX) $(OSSL_XTRA_OBJ)
 
 #
 # Get the OpenSSL objects expanded (tmp/dummyfile)
 # and selectively copied
 #
 #Note: BUILD_OBJS coming from $(OPSYS)_.mk includes BASE_OBJS (from BASE_OSSL_FILES.mk)
+tmp:
+	$(MKDIR) $@
 
-tmp/tmp/dummyfile:  Build_OSSL_Complete tmp/dummyfile
-	-$(MKDIR) tmp/tmp
-	(cd tmp ; \
-	$(CP) $(BUILD_OBJS) tmp/ ;\
-	cd .. ; \
-	)
-	touch tmp/tmp/dummyfile
+tmp/tmp: tmp
+	$(MKDIR) $@
+
+tmp/tmp/dummyfile: tmp/tmp Build_OSSL_Complete tmp/dummyfile
+	cd tmp; $(CP) $(BUILD_OBJS) tmp/
+	touch $@
 
 #- Build ICC shared library module
 #- $(ASMOBJS) is required to cater for small assembler files
@@ -983,7 +988,7 @@ $(GSK_SDK)/unstripped : $(GSK_SDK)
 	$(MKDIR) $@
 
 $(ICCDLL_NAME): Makefile $(PQC_TARGET) privkey.rsa icclib$(OBJSUFX) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) tmp/tmp/dummyfile signer$(EXESUFX) $(GSK_SDK)/unstripped $(ICC_RTE_DIR) $(NOSHIP_ICC_RTE_DIR) $(ARGON)
-	$(SLD) $(SLDFLAGS) $(ICCLIB_LNK) $(EXPORT_FLAG)$(ICCLIB_EXPFILE)  icclib$(OBJSUFX) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) \
+	$(SLD) $(SLDFLAGS) $(ICCLIB_LNK) $(EXPORT_FLAG)$(ICCLIB_EXPFILE) icclib$(OBJSUFX) $(LIBOBJS) $(STLPRFX)zlib$(STLSUFX) \
 		$(ARGON) tmp/tmp/*$(OBJSUFX) $(LDLIBS) $(PQCLIBS)
 #- Unstripped goes into NOSHIP and sdk
 	$(OPENSSL_PATH_SETUP) ./signer$(EXESUFX) ICCSIG.txt privkey.rsa -SELF -FILE $(ICCDLL_NAME) $(TWEAKS) "ICC_ALLOW_2KEY3DES=1"
@@ -1046,10 +1051,10 @@ $(ICC_RTE_DIR)/$(SHLPRFX)icclib$(VTAG).dylib : $(ICC_RTE_DIR) $(ICCDLL_NAME)
 	$(CP) $(ICCDLL_NAME) $@
 
 #- Compile the ICC shared library main source
-icclib$(OBJSUFX): Makefile icclib.c loaded.c loaded.h iccglobals.h platform.h iccversion.h \
-	platfsl.h iccerr.h $(TRNG_DIR)/ICC_NRBG.h tracer.h icc.h icc_a.h extsig.h
+icclib$(OBJSUFX): Makefile icclib.c loaded.c loaded.h platform.h iccversion.h \
+	platfsl.h iccerr.h $(TRNG_DIR)/ICC_NRBG.h tracer.h extsig.h icc.h icc_a.h iccglobals.h
 	$(CC) $(CFLAGS) -DOPSYS="\"$(OPSYS)\"" -DICCDLL_NAME="\"$(ICCDLL_NAME)\"" -DMYNAME=icclib$(VTAG) \
-		-DINSTDIR=\""$(GSK_GLOBAL)"\" $(PQCINC) -I./ -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) icclib.c
+		-DINSTDIR=\""$(GSK_GLOBAL)"\" $(PQCINC) -I./ -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) icclib.c
 
 
 # Code specifically for Java/JCEPlus
@@ -1062,11 +1067,11 @@ OS_helpers$(OBJSUFX): OS_helpers.c
 #- Note some platforms, SUN_SOL8/SUN64 AIX/AIX64 need added assembler tweaks
 #  which affect timer_entropy.c
 #
-TRNG_HDRS	= -I./ -I$(ICC_ROOT)/$(ZLIB) -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(TRNG_DIR) -I$(API_DIR)
+TRNG_HDRS = -I./ -I$(ICC_ROOT)/$(ZLIB) -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(TRNG_DIR) -I$(API_DIR)
 
 # Base routines to read TSC register equivalents
 # Note: Depends on asm routines in OpenSSL on some platforms
-timer_entropy$(OBJSUFX):  $(TRNG_DIR)/timer_entropy.c  $(TRNG_DIR)/timer_entropy.h
+timer_entropy$(OBJSUFX): $(TRNG_DIR)/timer_entropy.c  $(TRNG_DIR)/timer_entropy.h
 	$(CC) $(CFLAGS) $(TRNG_HDRS) $(ASM_TWEAKS) $(TRNG_DIR)/timer_entropy.c $(OUT)$@
 
 # Conditioning for FIPS
@@ -1077,7 +1082,7 @@ timer_fips$(OBJSUFX):  $(TRNG_DIR)/timer_fips.c  $(TRNG_DIR)/timer_entropy.h $(T
 
 
 # Generic personalization routines
-personalise$(OBJSUFX):  $(TRNG_DIR)/personalise.c  $(TRNG_DIR)/personalise.h
+personalise$(OBJSUFX): $(TRNG_DIR)/personalise.c $(TRNG_DIR)/personalise.h
 	$(CC) $(CFLAGS) $(TRNG_HDRS) $(TRNG_DIR)/personalise.c $(OUT)$@
 
 # Generic algs, pmax, AP, RC + self test
@@ -1124,9 +1129,9 @@ TRNG_ALT4$(OBJSUFX):  $(TRNG_DIR)/TRNG_ALT4.c  $(TRNG_DIR)/timer_entropy.h $(PRN
 
 # Common code for all the TRNG's
 
-ICC_NRBG$(OBJSUFX): $(TRNG_DIR)/ICC_NRBG.c  $(TRNG_DIR)/ICC_NRBG.h \
+ICC_NRBG$(OBJSUFX): $(TRNG_DIR)/ICC_NRBG.c $(TRNG_DIR)/ICC_NRBG.h \
 	$(TRNG_DIR)/TRNG_FIPS.h $(TRNG_DIR)/TRNG_ALT.h $(TRNG_DIR)/TRNG_ALT4.h
-	$(CC) $(CFLAGS) $(TRNG_HDRS)   $(TRNG_DIR)/ICC_NRBG.c
+	$(CC) $(CFLAGS) $(TRNG_HDRS) $(TRNG_DIR)/ICC_NRBG.c
 
 # API access direct to the TRNG's, mainly for testing
 
@@ -1174,22 +1179,22 @@ signer$(EXESUFX): signer$(OBJSUFX) $(SLIBCRYPTO)
 
 # ref tools.mk icclib_sa uses extsig.o
 extsig$(OBJSUFX): extsig.c
-	$(CC) $(CFLAGS) -I$(SDK_DIR)  -I$(OSSLINC_DIR) extsig.c
+	$(CC) $(CFLAGS) -I$(SDK_DIR) -I$(OSSLINC_DIR) extsig.c
 
 #- Build ICC Err code
 iccerr$(OBJSUFX): iccerr.c iccerr.h $(SDK_DIR)/iccglobals.h
-	$(CC) $(CFLAGS)  -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) iccerr.c
+	$(CC) $(CFLAGS) -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) iccerr.c
 
 #- Build ICC status message code
 status$(OBJSUFX): status.c status.h icclib.h 
-	$(CC) $(CFLAGS)  -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) status.c
+	$(CC) $(CFLAGS) -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) status.c
 
 #- Build ICC FIPS code
 # include a sanity check for the pubkey.h include file - should be DER encoding - we can get a broken one on ZOSa
-fips$(OBJSUFX): pubkey.h fips.c fips.h icclib.h iccerr.h $(PRNG_DIR)/fips-prng-RAND.h tracer.h 
+fips$(OBJSUFX): pubkey.h fips.c fips.h icclib.h iccerr.h $(PRNG_DIR)/fips-prng-RAND.h tracer.h
 	cat pubkey.h
 	grep "	0x30,0x82," pubkey.h
-	$(CC) $(CFLAGS) -I./  -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) fips.c
+	$(CC) $(CFLAGS) -I./ -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) fips.c
 
 #- Compile the FIPS prng code
 fips-prng-err$(OBJSUFX): $(PRNG_DIR)/fips-prng-err.c $(PRNG_DIR)/fips-prng-err.h
@@ -1215,33 +1220,33 @@ SP800-90HMAC$(OBJSUFX): $(PRNG_DIR)/SP800-90HMAC.c \
 	$(CC) $(CFLAGS) -I./ -I$(ICC_ROOT)/$(ZLIB) -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) $(PRNG_DIR)/SP800-90HMAC.c
 
 ds$(OBJSUFX): $(PRNG_DIR)/ds.c $(PRNG_DIR)/ds.h 
-	$(CC) $(CFLAGS)  -I./ -I$(PRNG_DIR) $(PRNG_DIR)/ds.c
+	$(CC) $(CFLAGS) -I./ -I$(PRNG_DIR) $(PRNG_DIR)/ds.c
 
 utils$(OBJSUFX): $(PRNG_DIR)/utils.c  $(PRNG_DIR)/utils.h
-	$(CC) $(CFLAGS)  -I./ -I$(PRNG_DIR) $(PRNG_DIR)/utils.c
+	$(CC) $(CFLAGS) -I./ -I$(PRNG_DIR) $(PRNG_DIR)/utils.c
 
 # KDF's
 
 SP800-108$(OBJSUFX): SP800_108/SP800-108.c   SP800_108/SP800-108.h
-	$(CC) $(CFLAGS)  -I./ -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) SP800_108/SP800-108.c
+	$(CC) $(CFLAGS) -I./ -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) SP800_108/SP800-108.c
 
 # Key Wrap
 SP80038F$(OBJSUFX): SP800_38F/SP80038F.c   SP800_38F/SP80038F.h
-	$(CC) $(CFLAGS)  -I./ -Ifips-prng/ -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) SP800_38F/SP80038F.c
+	$(CC) $(CFLAGS) -I./ -Ifips-prng/ -I$(SDK_DIR) -I$(OSSLINC_DIR) -I$(OSSL_DIR) SP800_38F/SP80038F.c
 
 #- Build platform dependent code
 
 platform$(OBJSUFX): platform.c platform.h
-	$(CC) $(CFLAGS) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR)  -I./  -I$(SDK_DIR)/ platform.c
+	$(CC) $(CFLAGS) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I$(API_DIR) -I./ -I$(SDK_DIR)/ platform.c
 
 platfsl$(OBJSUFX): platfsl.c platfsl.h platform.h
-	$(CC) $(CFLAGS)  -I$(OSSLINC_DIR) -I$(OSSL_DIR)  -I./  -I$(SDK_DIR)/ platfsl.c
+	$(CC) $(CFLAGS) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I./ -I$(SDK_DIR)/ platfsl.c
 
 # ICCLIB_LINK is never defined.
 
 #- Build ICC static library stub
 $(ICCLIB): $(MYICC)$(OBJSUFX)
-	$(AR) $(ARFLAGS) $(MYICC)$(OBJSUFX) $(ICCLIB_LINK)  
+	$(AR) $(ARFLAGS) $(MYICC)$(OBJSUFX) $(ICCLIB_LINK)
 
 # Copy the ICC static library stub to the sdk directory
 # Done this way so we can build fat libs on OS/X without circular dependencies
@@ -1258,8 +1263,8 @@ $(ICCLIB_SDK): $(ICCLIB) $(SDK_DIR)
 $(MYICC).c: icc.c
 	$(CP) icc.c $@
 
-$(MYICC)$(OBJSUFX): $(MYICC).c icc_a.c icc.h icc_a.h platform.h iccversion.h
-	$(CC) $(CFLAGS) $(SDKFLAGS) -I./ -I$(OSSLINC_DIR) -I$(OSSL_DIR) $(MYICC).c $(OUT)$@
+$(MYICC)$(OBJSUFX): $(MYICC).c icc_a.c $(SDK_DIR)/icc.h $(SDK_DIR)/icc_a.h platform.h iccversion.h
+	$(CC) $(CFLAGS) $(SDKFLAGS) -I$(SDK_DIR)/ -I$(OSSLINC_DIR) -I$(OSSL_DIR) $(MYICC).c $(OUT)$@
 
 # Notes:
 # ICCLIB is the ICC module static library (defined locally)
@@ -1273,8 +1278,8 @@ $(ICCTEST): $(ICCDLL) $(ICCLIB) icctest$(OBJSUFX)
 
 #- Compile the ICC test code source
 
-icctest$(OBJSUFX): icctest.c icc.h icc_a.h iccglobals.h
-	$(CC) $(CFLAGS) -I./ icctest.c
+icctest$(OBJSUFX): icctest.c $(SDK_DIR)/icc.h $(SDK_DIR)/icc_a.h $(SDK_DIR)/iccglobals.h
+	$(CC) $(CFLAGS) -I$(SDK_DIR)/ icctest.c
 
 
 # libcrypto.sl.1.1.1 is another alias - usually libcrypto.sl.1.1
@@ -1282,7 +1287,7 @@ icctest$(OBJSUFX): icctest.c icc.h icc_a.h iccglobals.h
 
 $(OSSLOBJ_DIR)/$(SHLPRFX)crypto$(SHLSUFX).$(OPENSSL_LIBVER): Build_OSSL_Complete
 	$(RM) $@
-	-ln -s $(OSSLOBJ_DIR)/$(SHLPRFX)crypto$(SHLSUFX)  $@
+	-ln -s $(OSSLOBJ_DIR)/$(SHLPRFX)crypto$(SHLSUFX) $@
 
 # this is in WIN_like.mk - probably should be here instead
 #$(ICC_ROOT)/$(OPENSSL_VER)/apps/openssl$(OBJSUFX): $(ICC_ROOT)/$(OPENSSL_VER)/apps/openssl.c
@@ -1329,9 +1334,9 @@ show_config:
 	echo "ICC VERSION       = " "$(ICC_VERSION_VER).$(ICC_VERSION_REL)"
 	echo "OPSYS  		= " "$(OPSYS)" 
 	echo "CONFIG 		= " "$(CONFIG)"
-	echo "BUILD  		= " "$(BUILD)"
-	echo "ZLIB              = " "$(ZLIB)"
-	echo "XPLINK            = " "$(XPLINK)"
+	echo "BUILD         = " "$(BUILD)"
+	echo "ZLIB          = " "$(ZLIB)"
+	echo "XPLINK        = " "$(XPLINK)"
 	echo "PQC_TARGET    = " "$(PQC_TARGET)"
 	echo "ARGON         = " "$(ARGON)"
 	echo "========== Directories ============"
@@ -1414,9 +1419,12 @@ show_config:
 	echo "EXTRAS            = " "$(EXTRAS)"
 	echo "TARGETS           = " "$(TARGETS)"	
 	echo "MANIFESTS         = " "$(MANIFESTS)"
-	echo "CAVSON        	= " "$(CAVSON)"
-	echo "CAVSBVT        	= " "$(CAVSBVT)"
-	echo
+	@echo "CAVSON        	= " "$(CAVSON)"
+	@echo "CAVSBVT        	= " "$(CAVSBVT)"
+	@echo
+	@echo "LIBOQS_VER      	= " "$(LIBOQS_VER)"
+	@echo "LIBDKS_VER      	= " "$(LIBDKS_VER)"
+	@echo
 
 show_ossl:
 	@echo "E_OBJ       	= " "$(E_OBJ)"

@@ -62,7 +62,7 @@ struct DSA_SIG_st {
 
 static void GenerateKAData(ICClib *iccLib,ICC_STATUS *stat);
 
-#endif 
+#endif
 
 /* may also use this for debugging */
 void iccPrintBytes(unsigned char bytes[], int len);
@@ -616,7 +616,7 @@ static const unsigned char rsa_privK_ka[] =
         0x71, 0x8D, 0x13, 0x84, 0xF9, 0xCB, 0x85, 0xF4, 0xBE, 0x97, 0x04, 0x37, 0xD0, 0x9F, 0x02, 0x38,
         0x40, 0xDC, 0x87, 0x11, 0x42, 0x3B, 0xB5, 0x06, 0x52, 0xF2, 0xFD, 0xCD, 0x20, 0x59, 0x71, 0x8A,
         0x4B, 0x1F, 0x3D, 0x75, 0xB5, 0x98, 0xE3, 0xD5, 0x32, 0x40, 0x8A, 0x88, 0xCC, 0x65, 0xFB, 0xAB};
-  
+
 /** \known Data: (aes_ka) AES-256 output */
 static const unsigned char aes_ka[]=
   {   0x03,0x81,0x39,0x0C,0x8A,0xA4,0x68,0x79,
@@ -1406,25 +1406,25 @@ static int GenerateSig(ICC_STATUS *stat,EVP_PKEY *pkey,unsigned char *sig,size_t
   }
   rc = EVP_DigestSignInit(md_ctx,&pctx,md,NULL,pkey);
   if (1 == rc) {
-  switch(flags) {
-    case RSA_PKCS1_PADDING:
+     switch (flags) {
+     case RSA_PKCS1_PADDING:
         rc = EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING);
-    break;
-    case RSA_PKCS1_PSS_PADDING:
+        break;
+     case RSA_PKCS1_PSS_PADDING:
         rc = EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING);
         if (1 == rc) rc = EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, RSA_PSS_SALTLEN_AUTO);
         if (1 == rc) /*rc =*/ EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md(pctx, md);
-    break;  
-    default:
-    break;
+        break;
+     default:
+        break;
+     }
   }
-  }
-  if(1 == rc) {
+  if (1 == rc) {
     rc = EVP_SignUpdate(md_ctx,in,sizeof(in));
     if (1 == rc) rc = EVP_DigestSignFinal(md_ctx,sig,sigL);
   }
   EVP_MD_CTX_free(md_ctx);
-  if(1 != rc) {
+  if (1 != rc) {
 #if 0
     int errc = 0;
     char* errs = (char *)malloc(120);
@@ -1475,20 +1475,20 @@ static int VerifySig(ICC_STATUS *stat,EVP_PKEY *pkey,const unsigned char *sig,si
      rc = -1;
   }
   else {
-  rc = EVP_DigestVerifyInit(md_ctx,&pctx,md,NULL,pkey);
-    switch(flags) {
-    case RSA_PKCS1_PADDING:
-      EVP_PKEY_CTX_set_rsa_padding(pctx,RSA_PKCS1_PADDING);
-    break;
-    case RSA_PKCS1_PSS_PADDING:
-      EVP_PKEY_CTX_set_rsa_padding(pctx,RSA_PKCS1_PSS_PADDING);
-    break;  
+     rc = EVP_DigestVerifyInit(md_ctx, &pctx, md, NULL, pkey);
+     switch (flags) {
+     case RSA_PKCS1_PADDING:
+        EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING);
+        break;
+     case RSA_PKCS1_PSS_PADDING:
+        EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING);
+        break;
      case RSA_PKCS1_OAEP_PADDING:
         EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_OAEP_PADDING);
         break;
-    default:
-    break;
-  }
+     default:
+        break;
+     }
   }
   if(1 == rc) {
     EVP_SignUpdate(md_ctx,tmp,sizeof(in));
@@ -1962,7 +1962,7 @@ int iccDHTest(ICC_STATUS *icc_stat)
     /* note that the private key is much shorter than normally used
        * but still g ** priv_key > p
     */
-    priv_key = BN_new();    
+    priv_key = BN_new();
     BN_bin2bn(dh_test_2048_priv_key,sizeof(dh_test_2048_priv_key),priv_key);
     pub_key = BN_new();
     BN_bin2bn(dh_test_2048_pub_key, sizeof(dh_test_2048_pub_key), pub_key);
@@ -3094,7 +3094,7 @@ static int KATest(ICC_STATUS *stat,EVP_PKEY *pkey, const unsigned char *sig,size
     @return ICC_OK or ICC_ERROR
     @note  This is only usable with a broken RNG.
     We verify sig, then sign and check we get the same answer
-*/ 
+*/
 static int KATest_broken(ICC_STATUS *stat,EVP_PKEY *pkey, const unsigned char *sig,size_t outL,unsigned int flags,const char *msg,int error)
 { 
   unsigned char *isig = NULL;
@@ -3164,12 +3164,12 @@ static void iccRSACipherTest(ICClib *iccLib, RSA *rsa, int padding,
 
   if (ICC_ERROR != rv) {
      if (encWithPrivate) {
-    evpRC = RSA_private_encrypt(inL, in, outEncrypted, rsa, padding);
-    if (evpRC < 0) {
-      OpenSSLError(iccLib, icc_stat, __FILE__, __LINE__);
-      rv = ICC_ERROR;
-    }
-  }
+        evpRC = RSA_private_encrypt(inL, in, outEncrypted, rsa, padding);
+        if (evpRC < 0) {
+           OpenSSLError(iccLib, icc_stat, __FILE__, __LINE__);
+           rv = ICC_ERROR;
+        }
+     }
      else {
         evpRC = RSA_public_encrypt(inL, in, outEncrypted, rsa, padding);
         if (evpRC < 0) {
@@ -4673,11 +4673,11 @@ void iccDoKnownAnswer(ICClib * iccLib, ICC_STATUS * icc_stat) {
     if (ICC_OK == icc_stat->majRC)
     {
        int encWithPrivate = 1;
-      tmp = RSA_key;
-      d2i_RSAPrivateKey(&rsaKey, &tmp, sizeof(RSA_key));
+       tmp = RSA_key;
+       d2i_RSAPrivateKey(&rsaKey, &tmp, sizeof(RSA_key));
        iccRSACipherTest(iccLib, rsaKey, 1, encWithPrivate,
           in, sizeof(in), rsa_privK_ka, sizeof(rsa_privK_ka),
-                       icc_stat);
+          icc_stat);
     }
 
     if (ICC_OK == icc_stat->majRC)

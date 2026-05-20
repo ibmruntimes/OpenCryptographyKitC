@@ -139,7 +139,7 @@ const ICC_EVP_CIPHER *JCC_EVP_get_cipherbyname(ICC_CTX *ctx, const char *name)
 #if defined(ICKC_WRAP)
 const ICC_EVP_CIPHER* ICKC_EVP_get_cipherbyname(ICC_CTX* ctx, const char* name)
 #else
-const ICC_EVP_CIPHER *ICC_EVP_get_cipherbyname(ICC_CTX *ctx, const char *name) 
+const ICC_EVP_CIPHER *ICC_EVP_get_cipherbyname(ICC_CTX *ctx, const char *name)
 #endif
 #endif
 {

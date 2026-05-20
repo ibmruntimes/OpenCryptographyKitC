@@ -5,7 +5,7 @@
  in the file LICENSE in the source distribution.
  */
  
- /*
+/*
   sigtest.c
 */
 #include <stdio.h>
@@ -23,9 +23,9 @@
 #endif
 
 #if defined(_WIN32)
-#   include <windows.h>
+#include <windows.h>
 #else
-#   include <stdlib.h>
+#include <stdlib.h>
 #endif
 
 # include "icc.h"
@@ -63,9 +63,53 @@ ICC_Function_Table* pfn_Table = &fn_Table;
 /* private is none, raw or pkcs8 */
 enum ed { none = 0, raw = 1, pkcs1 = 2, pkcs8 = 4 };
 
+/* Function to read hex string from a file */
+static char* read_hex_string_from_file(const char* filename)
+{
+   FILE* fp = NULL;
+   char* hexbuf = NULL;
+   long filesize = 0;
+   size_t bytes_read = 0;
+
+   fp = fopen(filename, "r");
+   if (!fp) {
+      printf("Error: Cannot open file '%s'\n", filename);
+      return NULL;
+   }
+
+   fseek(fp, 0, SEEK_END);
+   filesize = ftell(fp);
+   fseek(fp, 0, SEEK_SET);
+
+   if (filesize <= 0) {
+      printf("Error: File '%s' is empty\n", filename);
+      fclose(fp);
+      return NULL;
+   }
+
+   hexbuf = (char*)malloc(filesize + 1);
+   if (!hexbuf) {
+      printf("Error: Memory allocation failed\n");
+      fclose(fp);
+      return NULL;
+   }
+
+   bytes_read = fread(hexbuf, 1, filesize, fp);
+   fclose(fp);
+   
+   if (bytes_read != (size_t)filesize) {
+      printf("Error: Failed to read file '%s'\n", filename);
+      free(hexbuf);
+      return NULL;
+   }
+   hexbuf[bytes_read] = '\0';
+
+   return hexbuf;
+}
+
 /* Helper function to print byte arrays in hexadecimal */
 
-static size_t hex2bin(unsigned char* bin, const char* hexString, size_t hexlen)
+static int hex2bin(unsigned char* bin, const char* hexString, size_t hexlen)
 {
    /* note hex string may contain spaces so bin len not be exactly hex len / 2, but always less than or equal to */
    unsigned char *r = bin;
@@ -598,7 +642,7 @@ PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, int verbose, 
 
    if (verbose) {
       printf("Algorithm : %s\n", algname);
-      printf("Hash : %s\n", hash? hash:"NULL");
+      printf("Hash : %s\n", hash ? hash : "NULL");
    }
 
    if ((pub && pub->data) && (pri && pri->data)) {
@@ -621,13 +665,13 @@ PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, int verbose, 
          return 1;
       }
    }
-      if (verbose) {
+   if (verbose) {
       fprintf(fp_rsp, "pk encoding length = %d\n", (int)pk.der.len);
       fprintf(fp_rsp, "pk %s\n", (encdec & pkcs1) ? "pkcs1" : "raw");
       fprintBstr(fp_rsp, "", pk.der.data, pk.der.len);
 
       fprintf(fp_rsp, "sk encoding length = %d\n", (int)sk.der.len);
-         if (encdec & (raw | pkcs8)) {
+      if (encdec & (raw | pkcs8)) {
          fprintf(fp_rsp, "sk %s\n", (encdec & pkcs8) ? "pkcs8" : "raw");
          fprintBstr(fp_rsp, "", sk.der.data, sk.der.len);
       }
@@ -660,13 +704,13 @@ PQC_sign_test(ICC_CTX* ctx, const char* algname, const char* hash, int verbose, 
       kbuf_dup(&signature, sig);
 
       if (!signature.data) {
-      if (verbose) {
+         if (verbose) {
             printf("sign\n");
-      }
+         }
          if ((ret_val = SignatureEVP_sign(ctx, &signature, &sk, msg, encdec, hash)) != 0) {
-         printf("SignatureEVP_sign returned <%d>\n", ret_val);
-         return 2;
-      }
+            printf("SignatureEVP_sign returned <%d>\n", ret_val);
+            return 2;
+         }
          if (verbose == 2) {
             fprintBstr(fp_rsp, "signature =\n", signature.data, signature.len);
          }
@@ -867,7 +911,7 @@ void tcb(const char* val1, const char* val2)
 static
 int OpenSSLError(ICC_CTX* ctx)
 {
-   unsigned long retcode = -1;
+   long retcode = -1;
    unsigned max = 5;
    /* may be more than one error recorded so print them all */
    while (retcode) {
@@ -875,7 +919,7 @@ int OpenSSLError(ICC_CTX* ctx)
       if (retcode) {
          static char buf[4096];
          ICC_ERR_error_string(ctx, retcode, buf);
-         printf("OpenSSL error %d [%s]\n", retcode, buf);
+         printf("OpenSSL error %ld [%s]\n", retcode, buf);
       }
       /* infinite loop breaker */
       if (max == 0) break;
@@ -922,6 +966,7 @@ int main(int argc, const char *argv[])
             printf("     -pri     Specify private key PKCS8 encoding in hex\n");
             printf("     -msg     Specify message to sign hex\n");
             printf("     -sig     Specify signature in hex\n");
+            printf("     -sigf    Specify signature file containing hex data\n");
             for ( j = 1; to_SIGNATURE_ALGNAME(j); j++) {
                printf(" %d    %s\n", j, to_SIGNATURE_ALGNAME(j));
             }
@@ -996,12 +1041,24 @@ int main(int argc, const char *argv[])
             if (msg.data) free(msg.data);
             msg.data = malloc(strlen(argv[i]) / 2);
             msg.len = hex2bin(msg.data, argv[i], strlen(argv[i]));
-            }
+         }
          else if (0 == strcmp(arg, "-sig")) {
             i++;
             if (sig.data) free(sig.data);
             sig.data = malloc(strlen(argv[i]) / 2);
             sig.len = hex2bin(sig.data, argv[i], strlen(argv[i]));
+         }
+         else if (0 == strcmp(arg, "-sigf")) {
+            i++;
+            char* hexstr = read_hex_string_from_file(argv[i]);
+            if (hexstr) {
+               if (sig.data) free(sig.data);
+               sig.data = malloc(strlen(hexstr) / 2);
+               sig.len = hex2bin(sig.data, hexstr, strlen(hexstr));
+               free(hexstr);
+            } else {
+               rv = -1;
+            }
          }
          else if (0 == strcmp(arg, "-alg")) {
             i++;
@@ -1036,7 +1093,7 @@ int main(int argc, const char *argv[])
          rv = -1;
          goto free_pub_pri_data;
       }
-
+      
       if(0 != load_icc_functions(lib_handle, pfn_Table))
       {
          printf("Failed to load functions \n");
@@ -1166,10 +1223,10 @@ int main(int argc, const char *argv[])
          if (algname) {
             /* Execute the sigPQC_Sign_test for specified algname */
             rv = PQC_sign_test(icc_ctx, algname, hash, verbose, encdec, &pubKey, &priKey, &msg, &sig);
-      if (rv) {
-         OpenSSLError(icc_ctx);
-         printf("%s: Error %d, try -? to get help\n", algname, rv);
-      }
+            if (rv) {
+               OpenSSLError(icc_ctx);
+               printf("%s: Error %d, try -? to get help\n", algname, rv);
+            }
             else{
                printf("PQC_Sign_test for algorithm: %s successful\n", algname);
             }
@@ -1183,6 +1240,7 @@ int main(int argc, const char *argv[])
                if (rv) {
                   OpenSSLError(icc_ctx);
                   printf("%s: Error %d during Signature test\n", algs[i], rv);
+                  break;
                }
                else{
                   printf("PQC_Sign_testfor algorithm: %s successful\n", algs[i]);

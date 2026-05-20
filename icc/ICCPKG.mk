@@ -2,7 +2,7 @@
 # Make file for ICCPKG components
 #
 
-iccpkg: ICC_ver.txt $(ICC_ROOT)/package/ICCPKG.tar  \
+iccpkg: ICC_ver.txt $(ICC_ROOT)/package/ICCPKG.tar \
 	$(ICC_ROOT)/package/gsk_crypto.tar $(ICC_ROOT)/package/gsk_crypto_sdk.tar \
 	$(ICC_ROOT)/package/jgsk_crypto.tar $(ICC_ROOT)/package/jgsk_crypto_sdk.tar
 

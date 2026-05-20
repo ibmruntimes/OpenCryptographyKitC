@@ -42,7 +42,7 @@
 #define ICC_PRODUCT_NAME "ICC"
 #endif
 #if !defined(ICC_VERSION_MOD)
-#define ICC_VERSION_MOD 18
+#define ICC_VERSION_MOD 21
 #endif
 #if !defined(ICC_VERSION_FIX)
 #define ICC_VERSION_FIX 0
