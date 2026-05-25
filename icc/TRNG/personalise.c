@@ -103,7 +103,7 @@ unsigned int Personalize(unsigned char *buffer)
     tmp += sizeof(pid);
 
     memcpy(tmp,&tid,sizeof(tid));
-    tmp += sizeof(pid);
+    tmp += sizeof(tid);
 
     strncpy((char *)tmp,name,sizeof(name)-1);
 

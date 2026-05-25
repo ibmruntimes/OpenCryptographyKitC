@@ -40,6 +40,9 @@ int AES_CCM_common(ICClib *pcb,unsigned char *iv,unsigned int ivlen,
   memset(tag,0,sizeof(tag));
 
   ctx = EVP_CIPHER_CTX_new();
+  if (ctx == NULL) {
+    return -1;
+  }
   switch(keylen) {
   case 16:
     cip = EVP_get_cipherbyname("aes-128-ccm");

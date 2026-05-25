@@ -76,10 +76,7 @@ void *ICC_Calloc(
 		 int line)
 {
   void *ptr = NULL;
-  ptr = CRYPTO_malloc((n*sz),file,line);
-  if(NULL != ptr) {
-    memset(ptr,0,(n*sz));
-  }
+  ptr = CRYPTO_zalloc((n*sz),file,line);
   return ptr;
 }
 

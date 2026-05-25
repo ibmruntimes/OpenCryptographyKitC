@@ -22,23 +22,21 @@ DEFAULT_debug_FILES    = icclib$(VTAG).pdb openssl.pdb vc90.pdb \
 			$(OSSL_DIR)/out32dll/libeay32.pdb 
 DEFAULT_MANIFESTS      =
 
-#
-#cd ../liboqs && cmake -G "Unix Makefiles" -DOQS_MINIMAL_BUILD="KEM_kyber_512;KEM_kyber_768;KEM_kyber_1024;SIG_ml_dsa_44;SIG_ml_dsa_65;SIG_ml_dsa_87;SIG_sphincs_shake_128s_simple;SIG_sphincs_shake_128f_simple;SIG_sphincs_shake_192s_simple;SIG_sphincs_shake_192f_simple;SIG_sphincs_shake_256s_simple;SIG_sphincs_shake_256f_simple;SIG_sphincs_sha2_128s_simple;SIG_sphincs_sha2_128f_simple;SIG_sphincs_sha2_192s_simple;SIG_sphincs_sha2_192f_simple;SIG_sphincs_sha2_256s_simple;SIG_sphincs_sha2_256f_simple" -DOQS_BUILD_ONLY_LIB=ON -DOQS_USE_OPENSSL=OFF .
-#
-
-#OQS_K_ALGS = KEM_kyber_512;KEM_kyber_768;KEM_kyber_1024;
-OQS_K_ALGS = KEM_ml_kem_768;KEM_ml_kem_768;KEM_ml_kem_1024
-#OQS_D_ALGS = SIG_dilithium_2;SIG_dilithium_3;SIG_dilithium_5
+OQS_K_ALGS = KEM_kyber_512;KEM_kyber_768;KEM_kyber_1024;
+OQS_K_ALGS += KEM_ml_kem_768;KEM_ml_kem_768;KEM_ml_kem_1024
+#OQS_D_ALGS = SIG_dilithium_2;SIG_dilithium_3;SIG_dilithium_5;
 OQS_D_ALGS = SIG_ml_dsa_44;SIG_ml_dsa_65;SIG_ml_dsa_87
-#OQS_S_ALGS = SIG_sphincs_shake_128s_simple;SIG_sphincs_shake_128f_simple;SIG_sphincs_shake_192s_simple;SIG_sphincs_shake_192f_simple;SIG_sphincs_shake_256s_simple;SIG_sphincs_shake_256f_simple;
-#OQS_S_ALGS += SIG_sphincs_sha2_128s_simple;SIG_sphincs_sha2_128f_simple;SIG_sphincs_sha2_192s_simple;SIG_sphincs_sha2_192f_simple;SIG_sphincs_sha2_256s_simple;SIG_sphincs_sha2_256f_simple
-OQS_S_ALGS = SIG_slh_dsa_pure_shake_128s;SIG_slh_dsa_pure_shake_128f;SIG_slh_dsa_pure_shake_192s;SIG_slh_dsa_pure_shake_192f;SIG_slh_dsa_pure_shake_256s;SIG_slh_dsa_pure_shake_256f;
+OQS_S_ALGS = SIG_sphincs_shake_128s_simple;SIG_sphincs_shake_128f_simple;SIG_sphincs_shake_192s_simple;SIG_sphincs_shake_192f_simple;SIG_sphincs_shake_256s_simple;SIG_sphincs_shake_256f_simple;
+OQS_S_ALGS += SIG_sphincs_sha2_128s_simple;SIG_sphincs_sha2_128f_simple;SIG_sphincs_sha2_192s_simple;SIG_sphincs_sha2_192f_simple;SIG_sphincs_sha2_256s_simple;SIG_sphincs_sha2_256f_simple;
+OQS_S_ALGS += SIG_slh_dsa_pure_shake_128s;SIG_slh_dsa_pure_shake_128f;SIG_slh_dsa_pure_shake_192s;SIG_slh_dsa_pure_shake_192f;SIG_slh_dsa_pure_shake_256s;SIG_slh_dsa_pure_shake_256f;
 OQS_S_ALGS += SIG_slh_dsa_pure_sha2_128s;SIG_slh_dsa_pure_sha2_128f;SIG_slh_dsa_pure_sha2_192s;SIG_slh_dsa_pure_sha2_192f;SIG_slh_dsa_pure_sha2_256s;SIG_slh_dsa_pure_sha2_256f
 OQS_FLAGS = -DOQS_MINIMAL_BUILD="$(OQS_K_ALGS);$(OQS_D_ALGS);$(OQS_S_ALGS)" -DOQS_BUILD_ONLY_LIB=ON -DOQS_USE_OPENSSL=OFF
 # ICC is going to link the static lib. But applications normally link to the .dll. There is no way to build both at once so uncomment this line to get .so/.dll
 #OQS_FLAGS =+ -DBUILD_SHARED_LIBS=ON 
-DEFAULT_CMAKE_OQS      = cmake -G "Unix Makefiles" $(OQS_FLAGS) .
-DEFAULT_BUILD_OQS      = make
+#DEFAULT_CMAKE_OQS      = touch $@
+DEFAULT_CMAKE_OQS      = cmake -G "Unix Makefiles" $(OQS_FLAGS) -DCMAKE_VERBOSE_MAKEFILE=ON .
+DEFAULT_BUILD_OQS      = $(MAKE) -C src OS=$(OPSYS)
+#DEFAULT_BUILD_OQS      = make
 $(OPSYS)_CMAKE_OQS     = $(DEFAULT_CMAKE_OQS)
 $(OPSYS)_BUILD_OQS     = $(DEFAULT_BUILD_OQS)
 
@@ -74,8 +72,9 @@ LIBOQS_VER=-0.15.0
 WIN32_LIBOQS_LIB_release=Release
 WIN32_LIBOQS_LIB_debug=Debug
 
-LIBOQS_LIB_$(OPSYS)=$(ICC_ROOT)/liboqs/lib/$(STLPRFX)oqs$(STLSUFX)
-LIBOQS_LIB_WIN64_VS2022=$(ICC_ROOT)/liboqs/lib/$(WIN32_LIBOQS_LIB_$(CONFIG))/$(STLPRFX)oqs$(STLSUFX)
+#LIBOQS_LIB_$(OPSYS)=$(ICC_ROOT)/liboqs/lib/$(STLPRFX)oqs$(STLSUFX)
+#LIBOQS_LIB_WIN64_VS2022=$(ICC_ROOT)/liboqs/lib/$(WIN32_LIBOQS_LIB_$(CONFIG))/$(STLPRFX)oqs$(STLSUFX)
+LIBOQS_LIB_$(OPSYS)=$(ICC_ROOT)/liboqs/liboqs$(STLSUFX)
 LIBOQS_LIB=$(LIBOQS_LIB_$(OPSYS))
 
 PQCLIBS_LIBOQS=$(LIBOQS_LIB)
@@ -97,7 +96,36 @@ $(ICC_ROOT)/libdks/kyber/ref/lib/libpqcrystals_kyber768_ref$(STLSUFX) \
 $(ICC_ROOT)/libdks/kyber/ref/lib/libpqcrystals_kyber1024_ref$(STLSUFX) \
 $(ICC_ROOT)/libdks/dilithium/ref/libpqcrystals_dilithium2_ref$(STLSUFX) \
 $(ICC_ROOT)/libdks/dilithium/ref/libpqcrystals_dilithium3_ref$(STLSUFX) \
-$(ICC_ROOT)/libdks/dilithium/ref/libpqcrystals_dilithium5_ref$(STLSUFX) \
+$(ICC_ROOT)/libdks/dilithium/ref/libpqcrystals_dilithium5_ref$(STLSUFX)
+
+ifeq (1, 0)
+
+# sphincs from liboqs
+# but these dont compile on our ICC build machines -so disabled for now.
+
+LIBDKS_LIB_SPHINCS= \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-shake_128s$(STLSUFX) \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-shake_128f$(STLSUFX) \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-shake_192s$(STLSUFX) \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-shake_192f$(STLSUFX) \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-shake_256s$(STLSUFX) \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-shake_256f$(STLSUFX) \
+\
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-sha2_128s$(STLSUFX) \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-sha2_128f$(STLSUFX) \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-sha2_192s$(STLSUFX) \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-sha2_192f$(STLSUFX) \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-sha2_256s$(STLSUFX) \
+$(ICC_ROOT)/libdks/src/sig/sphincs/lib-sphincs-sha2_256f$(STLSUFX) \
+\
+$(ICC_ROOT)/libdks/src/common/lib-common$(STLSUFX)
+
+else
+
+# previous sphincs from repo - never worked. Replaced by sphincs from liboqs
+# but it compiles
+
+LIBDKS_LIB_SPHINCS= \
 $(ICC_ROOT)/libdks/sphincs/ref/libsphincs_ref-sphincs-shake-128s$(STLSUFX) \
 $(ICC_ROOT)/libdks/sphincs/ref/libsphincs_ref-sphincs-shake-128f$(STLSUFX) \
 $(ICC_ROOT)/libdks/sphincs/ref/libsphincs_ref-sphincs-shake-192s$(STLSUFX) \
@@ -114,7 +142,9 @@ $(ICC_ROOT)/libdks/sphincs/ref/libsphincs_ref-sphincs-sha2-256s$(STLSUFX) \
 $(ICC_ROOT)/libdks/sphincs/ref/libsphincs_ref-sphincs-sha2-256f$(STLSUFX) \
 $(ICC_ROOT)/libdks/sphincs/ref/libsphincs_ref-hash-sphincs-sha2-256f$(STLSUFX)
 
-LIBDKS_LIB=$(LIBDKS_LIB_$(OPSYS))
+endif
+
+LIBDKS_LIB=$(LIBDKS_LIB_$(OPSYS)) $(LIBDKS_LIB_SPHINCS)
 
 PQCLIBS_LIBDKS=$(LIBDKS_LIB)
 PQCINC_LIBDKS=-DLIBDKS -I$(ICC_ROOT)/libdks
@@ -123,7 +153,6 @@ PQC_TARGET_LIBDKS=build_dks
 PQC_TESTS_LIBDKS=tests_dks
 
 # add platform definitions here to enable PQC
-# disable PQC by default
 # enable DKS on selected platforms
 # define to nothing to remove PQC
 
@@ -132,7 +161,9 @@ PQC_TESTS_LIBDKS=tests_dks
 # This just enables it per platform. PQC=xxx selects the support
 
 #PQC will be LIBDKS LIBOQS or undefined
-# default to LIBOQS where PQC is enabled, set PQC=LIBDKS or PQC=NONE on command line to change
+# PQC default. set PQC=LIBOQS (liboqs) PQC=LIBDKS (dilithium kyber sphincs) or PQC=NONE on command line to change
+# liboqs code needs 
+#PQC=LIBOQS
 PQC=LIBDKS
 
 LINUX_PQCLIBS=$(PQCLIBS_$(PQC))
@@ -299,8 +330,8 @@ WIN32_debug_FILES    = icclib$(VTAG).pdb openssl.pdb vc90.pdb \
 WIN32_MANIFESTS      =
 WIN32_OPENSSL_PATH_SETUP = PATH="$(OSSL_DIR)"
 
-WIN32_CMAKE_OQS = cmake -G "Visual Studio 17 2022" $(OQS_FLAGS) -DCMAKE_INSTALL_PREFIX=install .
-WIN32_BUILD_OQS = msbuild.exe liboqs.sln /property:Configuration=$(WIN32_LIBOQS_LIB_$(CONFIG))
+#WIN32_CMAKE_OQS = cmake -G "Visual Studio 17 2022" $(OQS_FLAGS) -DCMAKE_INSTALL_PREFIX=install .
+#WIN32_BUILD_OQS = msbuild.exe liboqs.sln /property:Configuration=$(WIN32_LIBOQS_LIB_$(CONFIG))
 
 WIN64_AMD_EXTRA_FILES    = *.pdb *.ilk *.plg
 WIN64_AMD_EXPORT_FLAG    = -def:
@@ -324,8 +355,8 @@ WIN64_AMD_EXTRAS  	     = $(WIN32_EXTRAS)
 WIN64_AMD_MANIFESTS      =
 WIN64_OPENSSL_PATH_SETUP = $(WIN32_OPENSSL_PATH_SETUP)
 
-WIN64_AMD_CMAKE_OQS      = $(WIN32_CMAKE_OQS)
-WIN64_AMD_BUILD_OQS      = $(WIN32_BUILD_OQS)
+#WIN64_AMD_CMAKE_OQS      = $(WIN32_CMAKE_OQS)
+#WIN64_AMD_BUILD_OQS      = $(WIN32_BUILD_OQS)
 
 #- Visual studio 2013
 WIN32_VS2013_EXTRA_FILES    = *.pdb *.ilk *.plg
@@ -355,8 +386,8 @@ WIN32_VS2013_OPENSSL_PATH_SETUP = $(WIN32_OPENSSL_PATH_SETUP)
 WIN32_VS2022_ASMOBJS        = icc.res
 WIN32_VS2022_ICCLIB_EXPFILE = $(WIN32_ICCLIB_EXPFILE)
 
-WIN32_VS2022_CMAKE_OQS      = $(WIN32_CMAKE_OQS)
-WIN32_VS2022_BUILD_OQS      = $(WIN32_BUILD_OQS)
+#WIN32_VS2022_CMAKE_OQS      = $(WIN32_CMAKE_OQS)
+#WIN32_VS2022_BUILD_OQS      = $(WIN32_BUILD_OQS)
 
 WIN64_AMD_VS2013_EXTRA_FILES    = *.pdb *.ilk *.plg
 WIN64_AMD_VS2013_EXPORT_FLAG    = -def:
@@ -383,8 +414,8 @@ WIN64_AMD_VS2013_EXTRAS  	     = $(WIN32_EXTRAS)
 WIN64_AMD_VS2013_MANIFESTS      =
 WIN64_AMD_VS2013_OPENSSL_PATH_SETUP = $(WIN32_OPENSSL_PATH_SETUP)
 
-WIN64_AMD_VS2013_CMAKE_OQS      = $(WIN32_CMAKE_OQS)
-WIN64_AMD_VS2013_BUILD_OQS      = $(WIN32_BUILD_OQS)
+#WIN64_AMD_VS2013_CMAKE_OQS      = $(WIN32_CMAKE_OQS)
+#WIN64_AMD_VS2013_BUILD_OQS      = $(WIN32_BUILD_OQS)
 
 WIN64_VS2022_EXTRA_FILES    = *.pdb *.ilk *.plg
 WIN64_VS2022_EXPORT_FLAG    = -def:
@@ -417,8 +448,8 @@ WIN64_VS2022_EXTRAS  	     = $(WIN32_EXTRAS)
 WIN64_VS2022_MANIFESTS      =
 WIN64_VS2022_OPENSSL_PATH_SETUP = $(WIN32_OPENSSL_PATH_SETUP)
 
-WIN64_VS2022_CMAKE_OQS      = $(WIN32_CMAKE_OQS)
-WIN64_VS2022_BUILD_OQS      = $(WIN32_BUILD_OQS)
+#WIN64_VS2022_BUILD_OQS      = $(WIN32_BUILD_OQS)
+#WIN64_VS2022_BUILD_OQS      = $(WIN32_BUILD_OQS)
 
 # Linux, generic, but targetted at ia32. Build with this first on a new platform
 LINUX_EXPORT_FLAG    = -Wl,--version-script,
@@ -436,7 +467,7 @@ LINUX_CLEAN_OSSL     = cd $(OSSL_DIR); make clean
 LINUX_TEST_CMD       = $(DEFAULT_TEST_CMD)
 # LINUX_EXTRAS  	     = PKCS11 PKCS11_PERF
 
-LINUX_CMAKE_OQS      = cmake -G "Unix Makefiles" $(OQS_FLAGS) -DBUILD_ONLY="s3;iam;sts" -DCMAKE_C_FLAGS=-m32 .
+#LINUX_CMAKE_OQS      = cmake -G "Unix Makefiles" $(OQS_FLAGS) -DBUILD_ONLY="s3;iam;sts" -DCMAKE_C_FLAGS=-m32 .
 
 # Linux using normal shared library conventions
 # used to test the build for platforms with no dlopen/dlsym.

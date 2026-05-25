@@ -226,10 +226,7 @@ int AES_GCM_CTX_ctrl(AES_GCM_CTX *ain, int mode, int accel, void *ptr)
 AES_GCM_CTX *AES_GCM_CTX_new()
 {
   AES_GCM_CTX_t *ctx = NULL;
-  ctx = OPENSSL_malloc(sizeof(AES_GCM_CTX_t));
-  if(NULL != ctx) {
-    memset(ctx,0,sizeof(AES_GCM_CTX_t));
-  }
+  ctx = OPENSSL_zalloc(sizeof(AES_GCM_CTX_t));
   return (AES_GCM_CTX *)ctx;
 }
 
@@ -248,7 +245,7 @@ void AES_GCM_CTX_free(AES_GCM_CTX *ctx)
     EVP_CIPHER_CTX_cleanup(a->IVctx);
     EVP_CIPHER_CTX_free(a->IVctx);
   }
-  memset(a,0,sizeof(AES_GCM_CTX_t));
+  ICC_securezero(a,sizeof(AES_GCM_CTX_t));
   OPENSSL_free(ctx);
 }
 static void XOR(unsigned char *a,unsigned char *b,int l)
@@ -308,6 +305,9 @@ int AES_GCM_Init(ICClib *pcb, AES_GCM_CTX *ain, unsigned char *iv, unsigned long
      if (NULL == a->iv) {
         if (ivlen > IVBLEN) {
            a->iv = OPENSSL_malloc(ivlen);
+           if (a->iv == NULL) {
+             return -1;
+           }
         }
         else {
            a->iv = &(a->ivbuf[0]);

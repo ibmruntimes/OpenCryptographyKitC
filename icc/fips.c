@@ -1401,6 +1401,9 @@ static int GenerateSig(ICC_STATUS *stat,EVP_PKEY *pkey,unsigned char *sig,size_t
   const EVP_MD *md = NULL;
   IN();
   md_ctx = EVP_MD_CTX_new();
+  if (!md_ctx) {
+    return -1;
+  }
   if(flags >= 0) { /* ED448, 25519 don't specifiy the MD as it's defined by the alg*/
     md = EVP_get_digestbyname("SHA256");
   }
@@ -1452,7 +1455,7 @@ static int GenerateSig(ICC_STATUS *stat,EVP_PKEY *pkey,unsigned char *sig,size_t
 
 static int VerifySig(ICC_STATUS *stat,EVP_PKEY *pkey,const unsigned char *sig,size_t sigL,int flags,const char *msg,int error)
 {
-  int rc = -1;
+  int rc = 0;
   EVP_MD_CTX *md_ctx = NULL;
   EVP_PKEY_CTX *pctx = NULL;
   const EVP_MD *md = NULL;
@@ -1469,26 +1472,32 @@ static int VerifySig(ICC_STATUS *stat,EVP_PKEY *pkey,const unsigned char *sig,si
     }
   }
   md_ctx = EVP_MD_CTX_new();
-  md = EVP_get_digestbyname("SHA256");
-  if (!md) {
-     /* failure */
-     rc = -1;
+
+  if (!md_ctx) {
+    rc = -1;
   }
-  else {
-     rc = EVP_DigestVerifyInit(md_ctx, &pctx, md, NULL, pkey);
-     switch (flags) {
-     case RSA_PKCS1_PADDING:
-        EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING);
-        break;
-     case RSA_PKCS1_PSS_PADDING:
-        EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING);
-        break;
-     case RSA_PKCS1_OAEP_PADDING:
-        EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_OAEP_PADDING);
-        break;
-     default:
-        break;
-     }
+  md = EVP_get_digestbyname("SHA256");
+
+  if (!md) {
+    /* failure */
+    rc = -1;
+  }
+  
+  if (rc == 0) {
+    rc = EVP_DigestVerifyInit(md_ctx,&pctx,md,NULL,pkey);
+    switch(flags) {
+      case RSA_PKCS1_PADDING:
+        EVP_PKEY_CTX_set_rsa_padding(pctx,RSA_PKCS1_PADDING);
+      break;
+      case RSA_PKCS1_PSS_PADDING:
+        EVP_PKEY_CTX_set_rsa_padding(pctx,RSA_PKCS1_PSS_PADDING);
+      break;  
+      case RSA_PKCS1_OAEP_PADDING:
+          EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_OAEP_PADDING);
+      break;
+      default:
+      break;
+    }
   }
   if(1 == rc) {
     EVP_SignUpdate(md_ctx,tmp,sizeof(in));
@@ -1545,7 +1554,7 @@ static void iccGenerateRSASig (ICC_STATUS *stat,const unsigned char *key, int le
     iccPrintBytes(sig,outL);
 
     EVP_PKEY_free(pkey);
-    memset(sig,0,sizeof(2048));
+    ICC_securezero(sig,2048);
     ICC_Free(sig);
   }
   RSA_free(rsa);
@@ -1651,7 +1660,7 @@ static void iccGenerateDSASig(ICC_STATUS *stat,const unsigned char *key, int   l
     iccPrintBytes(sig,outL);
 
     EVP_PKEY_free(pkey);
-    memset(sig,0,sizeof(2048));
+    ICC_securezero(sig, 2048);
     ICC_Free(sig);
   }
   DSA_free(dsa);
@@ -1894,7 +1903,8 @@ static int iccCheckKnownAnswer(
   char buf[32];
   IN();
   MARK(mode,alg);
-  memset(buf,0,sizeof(buf));
+  /* need to wipe because strncpy is not guaranteed to add a '\0' */
+  ICC_securezero(buf,sizeof(buf));
   strncpy(buf,mode,15);
   strncat(buf," ",2);
   strncat(buf,alg,15);
@@ -1920,7 +1930,7 @@ static int iccCheckKnownAnswer(
      iccPrintBytes(in, inL);
   }
 #endif
-  memset(buf,0,sizeof(buf));
+  ICC_securezero(buf,sizeof(buf));
   OUTRC(rv);
   return rv;
 }
@@ -1995,7 +2005,7 @@ int iccDHTest(ICC_STATUS *icc_stat)
     }
   }
   /*! \induced 163 DH shared secret test: Corrupt shared secret */
-  if(163 == icc_failure) {
+  if(163 == icc_failure && shared_secret) {
     shared_secret[13] = ~shared_secret[13];
   }
 
@@ -2089,6 +2099,7 @@ static int iccCheckKW(ICC_STATUS *stat,
   tmp1 = (unsigned char *)ICC_Malloc(ctl+16,__FILE__,__LINE__);
   if(NULL == tmp || NULL == tmp1) {
     rv = SetStatusMem(NULL,stat,__FILE__,__LINE__);
+    rv = ICC_ERROR;
   }
   if(ICC_OK == rv) {
     e = SP800_38F_KW(PT,ptl,tmp,&len,Key,kl,ICC_KW_WRAP | pad);
@@ -2103,11 +2114,11 @@ static int iccCheckKW(ICC_STATUS *stat,
     }   
   }
   if(NULL != tmp) {
-    memset(tmp,0,ctl+16);
+    ICC_securezero(tmp,ctl+16);
     ICC_Free(tmp);
   }
   if(NULL != tmp1) {
-    memset(tmp1,0,ctl+16);
+    ICC_securezero(tmp1,ctl+16);
     ICC_Free(tmp1);
   }
   OUTRC(rv);
@@ -2217,7 +2228,7 @@ static int iccDSA2KA(ICC_STATUS *status)
 		       "DSA2 Known answer - message verification failed",__FILE__,__LINE__);
     }
   }
-  memset(hash_buf,0,sizeof(hash_buf));
+  ICC_securezero(hash_buf,sizeof(hash_buf));
   if(NULL != dsa) {
     DSA_free(dsa);
   }
@@ -2228,11 +2239,11 @@ static int iccDSA2KA(ICC_STATUS *status)
     EVP_MD_CTX_free(md_ctx);
   }
   if(NULL != sig_buf) {
-    memset(sig_buf,0,sig_len);
+    ICC_securezero(sig_buf,sig_len);
     ICC_Free(sig_buf);
   }
   if(NULL != tmp) {
-    memset(tmp,0,2*strlen(DSA2_P));
+    ICC_securezero(tmp,2*strlen(DSA2_P));
     ICC_Free(tmp);
   }
   OUTRC(rv);
@@ -2248,14 +2259,14 @@ static int iccECDHVerifyKAS(ICC_STATUS *status,
   int rv = ICC_OK;
   unsigned char lclshared[128]; /* > 64 bytes, EC P-521, Allow for -571 */
   IN();
-  memset(lclshared,0,sizeof(lclshared));
+  ICC_securezero(lclshared,sizeof(lclshared));
   ECDH_compute_key(lclshared,len,otherp,mine,NULL);
   /*! \known Test: EC key agreement */
   if(185 == icc_failure) {
     lclshared[0] = ~lclshared[0];
   }
   iccCheckKnownAnswer(lclshared,len,shared,len,status,__FILE__,__LINE__,"ECDH","Key agreement");
-  memset(lclshared,0,sizeof(lclshared));
+  ICC_securezero(lclshared,sizeof(lclshared));
   OUTRC(rv);
   return rv;
 }
@@ -2724,11 +2735,11 @@ static int iccCipherTest(ICClib *iccLib,
   /*  free allocated buffers                                 */
     
   if (outEncrypted != NULL) {
-    memset(outEncrypted,0,outEncBL);
+    ICC_securezero(outEncrypted,outEncBL);
     ICC_Free(outEncrypted);
   }
   if (outDecrypted != NULL) {
-    memset(outDecrypted,0,outDecBL);
+    ICC_securezero(outDecrypted,outDecBL);
     ICC_Free(outDecrypted);
   }
   if(NULL != cipher_ctx) {
@@ -2848,7 +2859,14 @@ int iccDSAPairTest(ICClib *iccLib, DSA *dsa)
   sig = (unsigned char *) ICC_Malloc(2048,__FILE__,__LINE__);
   if( NULL != sig) {    
     pkey = EVP_PKEY_new();
+    if (!pkey) {
+      return ICC_ERROR;
+    }
     md_ctx = EVP_MD_CTX_new();
+    if (!md_ctx) {
+      EVP_PKEY_free(pkey);
+      return ICC_ERROR;
+    }
     md = EVP_get_digestbyname("SHA256");
     EVP_PKEY_set1_DSA(pkey,dsa);
     EVP_DigestSignInit(md_ctx,&pctx,md,NULL,pkey);
@@ -2871,7 +2889,7 @@ int iccDSAPairTest(ICClib *iccLib, DSA *dsa)
       rv = ICC_OK;
     }
     
-    memset(sig,0,sizeof(2048));
+    ICC_securezero(sig,2048);
     ICC_Free(sig);
     EVP_MD_CTX_free(md_ctx);
     EVP_PKEY_free(pkey);
@@ -2904,7 +2922,14 @@ int iccECKEYPairTest(ICClib *iccLib, EC_KEY *eckey)
   sig = (unsigned char *) ICC_Malloc(1024,__FILE__,__LINE__);
   if( NULL != sig) {    
     pkey = EVP_PKEY_new();
+    if (!pkey) {
+      return ICC_ERROR;
+    }
     md_ctx = EVP_MD_CTX_new();
+    if (!md_ctx) {
+      EVP_PKEY_free(pkey);
+      return ICC_ERROR;
+    }
     md = EVP_get_digestbyname("SHA256");
     EVP_PKEY_set1_EC_KEY(pkey,eckey);
     EVP_DigestSignInit(md_ctx,&pctx,md,NULL,pkey);
@@ -2926,7 +2951,7 @@ int iccECKEYPairTest(ICClib *iccLib, EC_KEY *eckey)
     } else {
       rv = ICC_OK;
     }
-    memset(sig,0,1024);
+    ICC_securezero(sig,1024);
     ICC_Free(sig);
     EVP_MD_CTX_free(md_ctx);
     EVP_PKEY_free(pkey);
@@ -2964,8 +2989,11 @@ int iccRSAKeyPair(ICClib *iccLib, RSA* rsa)
   IN();
   /* We can get passed garbage, don't lock the API on stuff that's just broken, 
     condition can be triggered by FIPS tests 
-    */
-  if (NULL != rsa && (0 != (Keylen = RSA_size(rsa)))) {
+  */
+  if (NULL != rsa) {
+     Keylen = RSA_size(rsa);
+  }
+  if (NULL != rsa && 0 != Keylen) {
     sig = (unsigned char *)ICC_Malloc(Keylen*2, __FILE__, __LINE__); /* Malloc is expensive, allocate space for both buffers, 16k key max */
     pkey = EVP_PKEY_new();
     md_ctx = EVP_MD_CTX_new();
@@ -3027,7 +3055,7 @@ int iccRSAKeyPair(ICClib *iccLib, RSA* rsa)
   }
  
   if(NULL != sig) {
-    memset(sig,0,outL);
+    ICC_securezero(sig,outL);
     ICC_Free(sig);
   }
   if(NULL != md_ctx) {
@@ -3306,11 +3334,11 @@ static void iccRSACipherTest(ICClib *iccLib, RSA *rsa, int padding,
   if (rsaDup != NULL)
     RSA_free(rsaDup);
   if (outDecrypted != NULL) {
-    memset(outDecrypted,0,SCRATCH_SIZE);
+    ICC_securezero(outDecrypted,SCRATCH_SIZE);
     ICC_Free(outDecrypted);
   }
   if (outEncrypted != NULL) {
-    memset(outEncrypted,0,SCRATCH_SIZE);
+    ICC_securezero(outEncrypted,SCRATCH_SIZE);
     ICC_Free(outEncrypted);
   }
   OUT();
@@ -3410,7 +3438,7 @@ static void iccHMACTest(ICClib *iccLib,
 
   }
   if( NULL != Result) {
-    memset(Result,0,256);
+    ICC_securezero(Result,256);
     ICC_Free(Result);
   }
   OUT();
@@ -3481,7 +3509,7 @@ static void iccCMACTest(ICClib *iccLib,
     iccCheckKnownAnswer(Result,explen, Expected,explen,
 			icc_stat,__FILE__,__LINE__,"CMAC",ciphername);
   }
-  memset(Result,0,sizeof(Result));
+  ICC_securezero(Result,sizeof(Result));
   OUT();
 }
 /** @brief NIST internal key consistancy check for AES-CCM
@@ -3573,11 +3601,11 @@ static void iccAES_CCMTest(ICClib *iccLib, ICC_STATUS *icc_stat,
     }
   }
   if (NULL != out) {
-    memset(out,0,datalen+64);
+    ICC_securezero(out,datalen+64);
     ICC_Free(out);
   }
   if (NULL != outd) {
-    memset(outd,0,datalen+64);
+    ICC_securezero(outd,datalen+64);
     ICC_Free(outd);
   }
   OUT();
@@ -3624,7 +3652,7 @@ static void iccAES_GCMTest(ICClib *iccLib,          ICC_STATUS *icc_stat,
   out = (unsigned char *)ICC_Malloc(explen,__FILE__,__LINE__);
   outd = (unsigned char *)ICC_Malloc(explen,__FILE__,__LINE__);
   tag = (unsigned char *)ICC_Malloc(taglen,__FILE__,__LINE__);
-  if( (NULL == out) || (outd == NULL) || (NULL == tag)) {
+  if( (NULL == out) || (outd == NULL) || (NULL == tag) || (NULL == gcm_ctx)) {
     SetStatusMem(iccLib,icc_stat,__FILE__,__LINE__);
   } else {
     /** \induced 131.  AES_GCM
@@ -3698,17 +3726,17 @@ static void iccAES_GCMTest(ICClib *iccLib,          ICC_STATUS *icc_stat,
     }  
     
     if(NULL != out) {
-      memset(out,0,explen);
+      ICC_securezero(out,explen);
       ICC_Free(out);
       out = NULL;
     }
     if(NULL != outd) {
-      memset(outd,0,explen);
+      ICC_securezero(outd,explen);
       ICC_Free(outd);
       outd = NULL;
     }
     if(NULL != tag) {
-      memset(tag,0,taglen);
+      ICC_securezero(tag,taglen);
       ICC_Free(tag);
       tag = NULL;
     }
@@ -3813,12 +3841,12 @@ static void iccAES_XTSTest(ICClib *iccLib,
     xts_ctx = NULL;
   }  
   if(NULL != out) {
-    memset(out,0,Clen);
+    ICC_securezero(out,Clen);
     ICC_Free(out);
     out = NULL;
   }
   if(NULL != outd) {
-    memset(outd,0,Plen);
+    ICC_securezero(outd,Plen);
     ICC_Free(outd);
     outd = NULL;
   }
@@ -3845,7 +3873,7 @@ static void iccHKDFTest(ICC_STATUS *status,
   unsigned char *my_okm = NULL;
   size_t my_prkLen = 0;
   IN();
-  memset(my_prk,0,EVP_MAX_MD_SIZE);
+  ICC_securezero(my_prk,EVP_MAX_MD_SIZE);
   my_okm = (unsigned char *)ICC_Calloc(1,okLen,__FILE__,__LINE__);
   if(NULL == my_okm) {
     SetStatusMem(NULL,status,__FILE__,__LINE__);
@@ -3869,7 +3897,7 @@ static void iccHKDFTest(ICC_STATUS *status,
   OUT();
 }
 
-static void iccChaChaPolyTest(ICC_STATUS *status,
+static void iccChaChaPolyTest(ICClib *iccLib, ICC_STATUS *icc_stat,
   const unsigned char *key,const unsigned char *iv,int ivlen, const unsigned char *aad, int aadlen,
   const unsigned char *pt, int ptlen, const unsigned char *ref_tag, int taglen, const unsigned char *ref_ct,int reflen)
 {
@@ -3885,30 +3913,37 @@ static void iccChaChaPolyTest(ICC_STATUS *status,
      so it needs to be large enough to deal with that 
   */ 
   obuf = ICC_Malloc(ptlen+32,__FILE__,__LINE__);
-  EVP_CIPHER_CTX_set_flags(cctx, EVP_CIPHER_CTX_FLAG_WRAP_ALLOW);
+  if (obuf == NULL) {
+    SetStatusMem(NULL,icc_stat,__FILE__,__LINE__);
+  }
+  if(ICC_OK == icc_stat->majRC) {
+    EVP_CIPHER_CTX_set_flags(cctx, EVP_CIPHER_CTX_FLAG_WRAP_ALLOW);
 
-  EVP_EncryptInit(cctx, cip, key,iv);
-  if(0 != ivlen) {
-    EVP_CIPHER_CTX_ctrl(cctx, EVP_CTRL_AEAD_SET_IVLEN,ivlen, NULL);
-  }
-  EVP_CIPHER_CTX_ctrl(cctx, EVP_CTRL_AEAD_SET_TAG, taglen,NULL);
-  EVP_CIPHER_CTX_set_padding(cctx,0);
-  if(0 != aadlen) {
-    EVP_EncryptUpdate(cctx, NULL, &outl,aad, aadlen);
-  }
-  if( 0 != ptlen) {
-    EVP_EncryptUpdate(cctx, obuf, &outl,pt, ptlen);
+    EVP_EncryptInit(cctx, cip, key,iv);
+    if(0 != ivlen) {
+      EVP_CIPHER_CTX_ctrl(cctx, EVP_CTRL_AEAD_SET_IVLEN,ivlen, NULL);
+    }
+    EVP_CIPHER_CTX_ctrl(cctx, EVP_CTRL_AEAD_SET_TAG, taglen,NULL);
+    EVP_CIPHER_CTX_set_padding(cctx,0);
+    if(0 != aadlen) {
+      EVP_EncryptUpdate(cctx, NULL, &outl,aad, aadlen);
+    }
+    if( 0 != ptlen) {
+      EVP_EncryptUpdate(cctx, obuf, &outl,pt, ptlen);
+      totl += outl;
+    }
+    EVP_EncryptFinal(cctx, (obuf + totl), &outl);
     totl += outl;
-  }
-  EVP_EncryptFinal(cctx, (obuf + totl), &outl);
-  totl += outl;
-  if(taglen > 0) {
-    EVP_CIPHER_CTX_ctrl(cctx, EVP_CTRL_AEAD_GET_TAG,taglen, tag);
-  }
+    if(taglen > 0) {
+      EVP_CIPHER_CTX_ctrl(cctx, EVP_CTRL_AEAD_GET_TAG,taglen, tag);
+    }
 
-  iccCheckKnownAnswer(obuf,totl,ref_ct,reflen,status,__FILE__,__LINE__,"chacha-poly1305","ciphertext");
-  iccCheckKnownAnswer(tag,taglen,ref_tag,taglen,status,__FILE__,__LINE__,"chacha-poly1305","tag");
-  ICC_Free(obuf);
+    iccCheckKnownAnswer(obuf,totl,ref_ct,reflen,icc_stat,__FILE__,__LINE__,"chacha-poly1305","ciphertext");
+    iccCheckKnownAnswer(tag,taglen,ref_tag,taglen,icc_stat,__FILE__,__LINE__,"chacha-poly1305","tag");
+  }
+  if (obuf){
+    ICC_Free(obuf);
+  }
   EVP_CIPHER_CTX_free(cctx);
   OUT();
 } 
@@ -4146,7 +4181,7 @@ int iccSetRNG(ICClib *iccLib, ICC_STATUS *icc_stat, void * seedB, int seedL)
       }
     }
   }
-  memset(buffer,0,sizeof(buffer));
+  ICC_securezero(buffer,sizeof(buffer));
   OUTRC(ret);
   return(ret);
 }
@@ -4329,7 +4364,7 @@ static int DoVeryBrokenTests(ICClib *pcb, ICC_STATUS *stat)
   MARK("Restore real rng","");
   RAND_set_rand_method( rngICCRand);
   MARK("Decommission broken RNG so it can't be used again","");
-  memset(&insecure_rand_meth,0,sizeof(insecure_rand_meth));
+  ICC_securezero(&insecure_rand_meth,sizeof(insecure_rand_meth));
   OUTRC(stat->majRC);
   return stat->majRC;
 }
@@ -4851,7 +4886,6 @@ void iccDoKnownAnswer(ICClib * iccLib, ICC_STATUS * icc_stat) {
 
     if (ICC_OK == icc_stat->majRC)
     {
-
       EC_KEY *mine = NULL;
       EC_POINT *otherp = NULL;
       EC_POINT *minep = NULL;
@@ -4864,51 +4898,72 @@ void iccDoKnownAnswer(ICClib * iccLib, ICC_STATUS * icc_stat) {
       nid = OBJ_txt2nid("secp521r1");
 
       mine = EC_KEY_new_by_curve_name(nid);
+      if (!mine) {
+        SetStatusMem(NULL, icc_stat, __FILE__, __LINE__);
+      }
       bn_ctx = BN_CTX_new();
+      if (!bn_ctx) {
+        EC_KEY_free(mine);
+        SetStatusMem(NULL, icc_stat, __FILE__, __LINE__);
+      }
       group = EC_KEY_get0_group(mine);
+      if (!group) {
+        EC_KEY_free(mine);
+        BN_CTX_free(bn_ctx);
+        SetStatusMem(NULL, icc_stat, __FILE__, __LINE__);
+      }
       strncpy((char *)ibuf, ECDH_pub_otherX, SCRATCH_SIZE - 1);
       /* \induced 140. EDCH, change other public key */
       if (icc_failure == 140)
       {
         ibuf[10] = ~ibuf[10];
       }
-      BN_hex2bn(&x, (char *)ibuf);
-      BN_hex2bn(&y, ECDH_pub_otherY);
+
       otherp = EC_POINT_new(group);
-      EC_POINT_set_affine_coordinates_GFp(group, otherp, x, y, bn_ctx);
-      BN_clear_free(x);
-      BN_clear_free(y);
-      x = y = NULL;
-      BN_hex2bn(&x, ECDH_pub_mineX);
-      BN_hex2bn(&y, ECDH_pub_mineY);
-      minep = EC_POINT_new(group);
-      EC_POINT_set_affine_coordinates_GFp(group, minep, x, y, bn_ctx);
-      BN_clear_free(x);
-      BN_clear_free(y);
-      EC_KEY_set_public_key(mine, minep);
-      strncpy((char *)ibuf, ECDH_priv_mine, SCRATCH_SIZE - 1);
-      /* \induced 141. EDCH, change my private key */
-      if (icc_failure == 141)
-      {
-        ibuf[10] = ~ibuf[10];
-      }
-      BN_hex2bn(&priv, (char *)ibuf);
-      EC_KEY_set_private_key(mine, priv);
-      memcpy(ibuf, ECDH_shared, sizeof(ECDH_shared));
-      /* \induced 142. EDCH, change shared secret */
-      if (icc_failure == 142)
-      {
-        ibuf[10] = ~ibuf[10];
+      if (!otherp) {
+        EC_KEY_free(mine);
+        BN_CTX_free(bn_ctx);
+        SetStatusMem(NULL, icc_stat, __FILE__, __LINE__);
       }
 
-      /* \known Test: ECDH
-     */
-      iccECDHVerifyKAS(icc_stat, otherp, mine, ibuf, sizeof(ECDH_shared));
-      EC_POINT_free(otherp);
-      EC_KEY_free(mine);
-      EC_POINT_free(minep);
-      BN_clear_free(priv);
-      BN_CTX_free(bn_ctx);
+      if (ICC_OK == icc_stat->majRC) {
+        BN_hex2bn(&x, (char *)ibuf);
+        BN_hex2bn(&y, ECDH_pub_otherY);
+        EC_POINT_set_affine_coordinates_GFp(group, otherp, x, y, bn_ctx);
+        BN_clear_free(x);
+        BN_clear_free(y);
+        x = y = NULL;
+        BN_hex2bn(&x, ECDH_pub_mineX);
+        BN_hex2bn(&y, ECDH_pub_mineY);
+        minep = EC_POINT_new(group);
+        EC_POINT_set_affine_coordinates_GFp(group, minep, x, y, bn_ctx);
+        BN_clear_free(x);
+        BN_clear_free(y);
+        EC_KEY_set_public_key(mine, minep);
+        strncpy((char *)ibuf, ECDH_priv_mine, SCRATCH_SIZE - 1);
+        /* \induced 141. EDCH, change my private key */
+        if (icc_failure == 141)
+        {
+          ibuf[10] = ~ibuf[10];
+        }
+        BN_hex2bn(&priv, (char *)ibuf);
+        EC_KEY_set_private_key(mine, priv);
+        memcpy(ibuf, ECDH_shared, sizeof(ECDH_shared));
+        /* \induced 142. EDCH, change shared secret */
+        if (icc_failure == 142)
+        {
+          ibuf[10] = ~ibuf[10];
+        }
+
+        /* \known Test: ECDH
+      */
+        iccECDHVerifyKAS(icc_stat, otherp, mine, ibuf, sizeof(ECDH_shared));
+        EC_POINT_free(otherp);
+        EC_KEY_free(mine);
+        EC_POINT_free(minep);
+        BN_clear_free(priv);
+        BN_CTX_free(bn_ctx);
+      }
     }
     if (ICC_OK == icc_stat->majRC)
     {
@@ -5058,7 +5113,7 @@ void iccDoKnownAnswer(ICClib * iccLib, ICC_STATUS * icc_stat) {
         ibuf[i] = ~ibuf[i];
       }
 
-      iccChaChaPolyTest(icc_stat, CHAPOLY_Key, CHAPOLY_IV, sizeof(CHAPOLY_IV), ibuf + i, sizeof(CHAPOLY_AAD),
+      iccChaChaPolyTest(iccLib, icc_stat, CHAPOLY_Key, CHAPOLY_IV, sizeof(CHAPOLY_IV), ibuf + i, sizeof(CHAPOLY_AAD),
                         ibuf, sizeof(CHAPOLY_PT), CHAPOLY_TAG, sizeof(CHAPOLY_TAG), CHAPOLY_CT, sizeof(CHAPOLY_CT));
     }
     if (ICC_OK == icc_stat->majRC)
@@ -5090,17 +5145,17 @@ void iccDoKnownAnswer(ICClib * iccLib, ICC_STATUS * icc_stat) {
 
     if (NULL != signature)
     {
-      memset(signature, 0, SCRATCH_SIZE);
+      ICC_securezero(signature, SCRATCH_SIZE);
       ICC_Free(signature);
     }
     if (NULL != ibuf)
     {
-      memset(ibuf, 0, SCRATCH_SIZE);
+      ICC_securezero(ibuf, SCRATCH_SIZE);
       ICC_Free(ibuf);
     }
     if (NULL != mystat)
     {
-      memset(mystat, 0, sizeof(ICC_STATUS));
+      ICC_securezero(mystat, sizeof(ICC_STATUS));
       ICC_Free(mystat);
     }
   }

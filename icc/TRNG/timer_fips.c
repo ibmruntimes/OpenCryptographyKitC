@@ -108,7 +108,7 @@ void T_FILTER_Init(T_FILTER *TF)
 */
 static void sorter_in(ICC_INT64 diff, ICC_UINT64 value,T_FILTER *tf)
 {
-    int i,freq;
+    unsigned int i,freq;
     DIST *dist;
 
     dist=tf->dist;

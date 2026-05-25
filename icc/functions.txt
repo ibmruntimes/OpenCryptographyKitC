@@ -3736,7 +3736,7 @@ required buffer size. ;
 #;
 #! @brief Set the key components (n, e, d) of an RSA object;
 #!        This function assigns the modulus (n), public exponent (e), and private exponent (d);
-#!        to an RSA structure. Ownership of the BIGNUMs is transferred to the RSA object—;
+#!        to an RSA structure. Ownership of the BIGNUMs is transferred to the RSA objectâ€”;
 #!        they should not be freed by the caller after this function succeeds.;
 #!
 #! @param r  Pointer to an RSA structure to set the key for.;

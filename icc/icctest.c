@@ -3090,6 +3090,7 @@ int runTest(ICC_CTX *ICC_ctx,ICC_STATUS *status,int testnum)
       printf("SP800-108 key derivation Test failed!\n");
       testnum = -1;
     } else testnum ++;
+    break;
   case 20:
     if(doGenerateRandomTest(ICC_ctx) != ICC_OSSL_SUCCESS) {
       printf("ICC_GenerateRandom() Test failed!\n");

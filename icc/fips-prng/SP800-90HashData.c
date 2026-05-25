@@ -91,7 +91,7 @@ static void Hash_df(SP800_90PRNG_Data_t *pctx,DS *in, unsigned char *out, unsign
   /* Debugging aid as much as anything, 
      T should be zero if not being used 
   */
-  memset(pctx->T,0,digestL);  
+  ICC_securezero(pctx->T,digestL);
   return;
 }
 

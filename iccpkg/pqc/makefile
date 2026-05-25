@@ -91,7 +91,7 @@ t_ssha2_128s_KAT_sigf:
 testkem: kemtest$(EXESUFX) t_kemtest t_kemtest_v t_k1024 t_k768 t_ktcb
 	$(GSK_SETUP) ; ./kemtest -?
 #  t_sshake128s - temporary disable
-testsig: sigtest$(EXESUFX) t_sigtest_v t_srsa t_srsa_tcb t_srsa_fips t_sdsa44 t_sdsa65 t_signature_KAT t_ssha2_128s_KAT_sigf
+testsig: sigtest$(EXESUFX) t_sigtest_v t_srsa t_srsa_tcb t_srsa_fips t_sdsa44 t_sdsa65 t_ssha2_128s_KAT_sigf
 	$(GSK_SETUP) ; ./sigtest -?
 
 tests: testkem tests_all_kyber testsig

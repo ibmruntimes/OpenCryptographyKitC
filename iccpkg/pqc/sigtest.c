@@ -1148,6 +1148,17 @@ int main(int argc, const char *argv[])
             printf("sigtest: %s\n", "ICC 8.6 not supported");
             exit(1);
          }
+
+      /* Get and report the ICC module name */
+      {
+         char iccmodulename[ICC_VALUESIZE+1];
+         if (ICC_ERROR == ICC_GetValue(icc_ctx, &status, ICC_MODULE_NAME, (void*)iccmodulename, ICC_VALUESIZE)) {
+            printf("ERROR: Could not get ICC module name\n");
+            ICC_Cleanup(icc_ctx, &status);
+            exit(1);
+         }
+         printf("ICC_Module_Name: %s\n", iccmodulename);
+      }
       }
 
       /*

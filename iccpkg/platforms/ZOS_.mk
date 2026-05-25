@@ -28,13 +28,13 @@ $(AUXLIB_B)$(SHLSUFX): icc_aux$(OBJSUFX)
 	$(STRIP) $@
 	-$(CP) $@ $(GSK_SDK)/$@
 
-$(GSK_LIBNAME): $(GSK_SDK) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
+$(GSK_LIBNAME): $(GSK_SDK) gsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) ../icc/csvquery_64.o \
 		$(ZICCOBJ) $(MUPPET) \
 		$(STKPK11) $(ZLIB_LIB)
 	if [ -e OLD_ICC/ZOS*/iccsdk/libicc.a ] ; then chtag -r OLD_ICC/ZOS*/iccsdk/libicc.a; fi
 	if [ -e OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt ] ; then chtag -c ISO8859-1 OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt; fi
-	$(SLD) $(SLDFLAGS) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
+	$(SLD) $(SLDFLAGS) gsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) ../icc/csvquery_64.o \
 		$(ZICCOBJ) $(MUPPET) \
 		$(STKPK11) $(ZLIB_LIB) \
@@ -50,25 +50,25 @@ OLD_ICC_OBJ_CLEAN=$(RM) $(OLD_ICC_OBJ)
 endif
 
 # Static lib
-$(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
+$(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(STKPK11) $(ZLIB_LIB) ../icc/csvquery_64.o
 	echo static lib
 	$(OLD_ICC_OBJ_AR)
 	$(AR) $(ARFLAGS) \
-		gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
+		gsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) $(ICC_ROOT)/icc/$(MYICC)$(OBJSUFX) $(OLD_ICC_OBJ) \
 		$(STKPK11) $(addprefix $(ICC_ROOT)/icc/,$(ZLIB_OBJ)) ../icc/csvquery_64.o
 	$(OLD_ICC_OBJ_CLEAN)
 
 # Java
-$(JGSK_LIBNAME): $(JGSK_SDK) $(JGSK_DIR) jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
+$(JGSK_LIBNAME): $(JGSK_SDK) $(JGSK_DIR) jgsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(JEX_OBJS) \
 		$(JTIMER_OBJS) ../icc/csvquery_64.o \
 		$(ZICCOBJ) $(MUPPET) \
 		$(ZLIB_LIB)
 	if [ -e OLD_ICC/ZOS*/iccsdk/libicc.a ] ; then chtag -r OLD_ICC/ZOS*/iccsdk/libicc.a; fi
 	if [ -e OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt ] ; then chtag -c ISO8859-1 OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt; fi
-	$(SLD) $(SLDFLAGS) jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
+	$(SLD) $(SLDFLAGS) jgsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(JEX_OBJS) \
 		$(JTIMER_OBJS) ../icc/csvquery_64.o \
 		$(ZICCOBJ) $(MUPPET) \
 		$(ZLIB_LIB) \
@@ -77,13 +77,13 @@ $(JGSK_LIBNAME): $(JGSK_SDK) $(JGSK_DIR) jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
 	$(STRIP) $@
 
 # ICKC
-$(ICKC_LIBNAME): $(GSK_DIR) $(GSK_SDK) ickc_wrap2$(OBJSUFX) \
+$(ICKC_LIBNAME): $(GSK_DIR) $(GSK_SDK) ickc_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) \
 		$(ICKCTIMER_OBJS) ../icc/csvquery_64.o \
 		$(ZICCOBJ) $(MUPPET) \
 		$(ZLIB_LIB)
 	if [ -e OLD_ICC/ZOS*/iccsdk/libicc.a ] ; then chtag -r OLD_ICC/ZOS*/iccsdk/libicc.a; fi
 	if [ -e OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt ] ; then chtag -c ISO8859-1 OLD_ICC/ZOS*A*/icc/icclib/ICCSIG.txt; fi
-	$(SLD) $(SLDFLAGS) ickc_wrap2$(OBJSUFX) \
+	$(SLD) $(SLDFLAGS) ickc_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) \
 		$(ICKCTIMER_OBJS) ../icc/csvquery_64.o \
 		$(ZICCOBJ) $(MUPPET) \
 		$(ZLIB_LIB) \

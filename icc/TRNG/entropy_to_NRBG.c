@@ -70,7 +70,7 @@ int conditioner(TRNG *T, unsigned char* outbuf, unsigned len)
         if(TRNG_OK != rv) {
           HMAC_CTX_cleanup(T->cond.hctx);
           return rv;
-        }          
+        }
       }
       HMAC_Update(T->cond.hctx,tbuf,sizeof(tbuf));
     }

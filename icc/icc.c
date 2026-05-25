@@ -70,11 +70,12 @@ static void parse_path_cleanup (char **paths);
 #define wcsdup _wcsdup
 #define strdup _strdup
 static wchar_t **parse_pathW (wchar_t * path);
+static void parse_path_cleanupW(wchar_t** paths);
 #endif
 
 
 static void SetStatusPrivate (ICC_STATUS * stat, int majRC, int minRC,
-			      char *mess);
+			      const char *mess);
 static void SetStatusPrivateOK (ICC_STATUS * stat);
 static int ICC_initialize_functions(ICC_CTX *pcb,ICC_STATUS *status,char *path,int iswchar);
 
@@ -178,7 +179,7 @@ static wchar_t * mywcsdup(const wchar_t *str) {
 static void ICC_strlcat(char *base,const char *append,unsigned int maxlen)
 {
   int l;
-  l = (int)maxlen - (int)strlen(base);
+  l = (int)maxlen - (int)strlen(base) -1;
   if( l > 1 ) {
     strncat(base,append,l);
   }
@@ -196,7 +197,7 @@ static ICC_STATUS default_status = {0,0,"O.K.",0};
 */
 
 static void
-SetStatusPrivate (ICC_STATUS * stat, int majRC, int minRC, char *mess)
+SetStatusPrivate (ICC_STATUS * stat, int majRC, int minRC, const char *mess)
 {
   stat->majRC = majRC;
   stat->minRC = minRC;
@@ -232,7 +233,7 @@ static void SetStatusPrivateLn2(ICC_STATUS *stat,int majRC,int minRC,const char 
 */
 static void SetStatusPrivateOK (ICC_STATUS * stat)
 {
-  SetStatusPrivate (stat, ICC_OK, ICC_OK, (char *)"OK");
+  SetStatusPrivate (stat, ICC_OK, ICC_OK, "OK");
 }
 
 /*!
@@ -281,7 +282,7 @@ ICC_CTX *ICC_InitW(ICC_STATUS *status, const wchar_t *iccpath) {
       ICCGlobal.mutexInit = 1;
     } else if (NULL != status) {
       SetStatusPrivate(status, ICC_OS_ERROR, ICC_NOT_ENOUGH_MEMORY,
-                       (char *)"Failed to create Mutex, out of handles ?");
+                       "Failed to create Mutex, out of handles ?");
       return NULL;
     }
   }
@@ -301,15 +302,28 @@ ICC_CTX *ICC_InitW(ICC_STATUS *status, const wchar_t *iccpath) {
   if (x >= MAX_PATH) {
     status->mode = -1;
     SetStatusPrivate(status, ICC_ERROR, ICC_INVALID_PARAMETER,
-                     (char *)"Parameter is too large");
+                     "Parameter is too large");
     return NULL;
   }
   path = ICC_Calloc(MAX_PATH, sizeof(wchar_t), __FILE__, __LINE__);
+  if (NULL == path) {
+     SetStatusPrivate(status, ICC_OS_ERROR, ICC_NOT_ENOUGH_MEMORY,
+        "Malloc failed");
+     return NULL;
+  }
   wpath = ICC_Calloc(MAX_PATH, sizeof(wchar_t), __FILE__, __LINE__);
+  if (NULL == wpath) {
+     SetStatusPrivate(status, ICC_OS_ERROR, ICC_NOT_ENOUGH_MEMORY,
+        "Malloc failed");
+     ICC_Free(path);
+     return NULL;
+  }
   pcb = (ICC_CTX *)ICC_Calloc(1, sizeof(ICC_CTX), __FILE__, __LINE__);
-  if ((NULL == path) || (NULL == pcb) || (NULL == wpath)) {
+  if (NULL == pcb) {
     SetStatusPrivate(status, ICC_OS_ERROR, ICC_NOT_ENOUGH_MEMORY,
-                     (char *)"Malloc failed");
+                     "Malloc failed");
+    ICC_Free(path);
+    ICC_Free(wpath);
     return NULL;
   }
 
@@ -327,7 +341,7 @@ ICC_CTX *ICC_InitW(ICC_STATUS *status, const wchar_t *iccpath) {
       MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, ICC_LIB_LOC, -1, wpath,
                           ICC_VALUESIZE - 1);
 
-      wcsncat(path, wpath,MAX_PATH);
+      wcsncat(path, wpath,MAX_PATH - strlen(path) -1);
       path[MAX_PATH-1] = L'\0';
       ICCGlobal.hICCLib = ICC_LoadLibraryW(path);
       if (NULL == ICCGlobal.hICCLib) {
@@ -355,7 +369,7 @@ ICC_CTX *ICC_InitW(ICC_STATUS *status, const wchar_t *iccpath) {
 
     /* Clean up the search list if there is one */
     if (paths) {
-      parse_path_cleanup((char **)paths);
+      parse_path_cleanupW(paths);
     }
   } else if (ICCGlobal.initialized) {
     /* wchar flag is cleared as we aren't resetting the path */
@@ -409,10 +423,10 @@ ICC_CTX *ICC_Init(ICC_STATUS *status, const char *iccpath) {
     } else if (NULL != status) {
 #if defined(__WIN32)
       SetStatusPrivate(status, ICC_OS_ERROR, ICC_NOT_ENOUGH_MEMORY,
-                       (char *)"Failed to create Mutex, out of handles ?");
+                       "Failed to create Mutex, out of handles ?");
 #else
       SetStatusPrivate(status, ICC_OS_ERROR, ICC_NOT_ENOUGH_MEMORY,
-                       (char *)"Failed to create Mutex");
+                       "Failed to create Mutex");
 #endif
       return NULL;
     }
@@ -439,14 +453,20 @@ ICC_CTX *ICC_Init(ICC_STATUS *status, const char *iccpath) {
   if (x >= MAX_PATH) {
     status->mode = -1;
     SetStatusPrivate(status, ICC_ERROR, ICC_INVALID_PARAMETER,
-                     (char *)"Parameter is too large");
+                     "Parameter is too large");
     return NULL;
   }
   path = ICC_Calloc(MAX_PATH, sizeof(char), __FILE__, __LINE__);
+  if (NULL == path) {
+     SetStatusPrivate(status, ICC_OS_ERROR, ICC_NOT_ENOUGH_MEMORY,
+        (char*)"Malloc failed");
+     return NULL;
+  }
   pcb = (ICC_CTX *)ICC_Calloc(1, sizeof(ICC_CTX), __FILE__, __LINE__);
-  if ((NULL == path) || (NULL == pcb)) {
+  if (NULL == pcb) {
     SetStatusPrivate(status, ICC_OS_ERROR, ICC_NOT_ENOUGH_MEMORY,
-                     (char *)"Malloc failed");
+                     "Malloc failed");
+    ICC_Free(path);
     return NULL;
   }
   /* No sucessful initializations so far ? */
@@ -590,7 +610,7 @@ int ICC_Cleanup (ICC_CTX * pcb, ICC_STATUS * status)
   if (pcb == NULL) {
     status->mode = -1;
     SetStatusPrivate (status, ICC_ERROR, ICC_NOT_INITIALIZED,
-		      (char *)"ICC has not been initialized");
+		      "ICC has not been initialized");
     return ICC_ERROR;
   }
   if (ICCGlobal.hICCLib != NULL) {
@@ -662,7 +682,7 @@ int ICC_Cleanup (ICC_CTX * pcb, ICC_STATUS * status)
  * path as the first option
  * @param path user supplied path, may be NULL
  * @return a pointer to an array of path components, caller free's
- * see parse_path_cleanup()
+ * see parse_path_cleanupW()
  */
 static wchar_t **parse_pathW (wchar_t * path)
 {
@@ -697,7 +717,7 @@ static wchar_t **parse_pathW (wchar_t * path)
   /* Allocate the array */
   paths = (wchar_t **)ICC_Calloc (nelem, sizeof (wchar_t *),__FILE__,__LINE__);
   i = 0;
-  if (path != NULL) {
+  if (path != NULL && i < nelem) {
     paths[i++] = mywcsdup (path);
   }
 
@@ -705,12 +725,15 @@ static wchar_t **parse_pathW (wchar_t * path)
     myenv = mywcsdup (env);
     ptr = myenv;
     while ((ptr != NULL) && (*ptr != L'\0')) {
+      wchar_t* cdir = NULL;
+
       tmp = wcschr (ptr, LIB_PATH_SPLIT_W);
       if (tmp != NULL) {
 	      *tmp++ = L'\0';
       }
-      if(wcslen(ptr) > 1) {
-	      paths[i++] = mywcsdup (ptr);
+      if(wcslen(ptr) > 1 && i < nelem) {
+         paths[i++] = mywcsdup (ptr);
+         cdir = ptr;
       }
       ptr = tmp;
       /* 
@@ -718,19 +741,19 @@ static wchar_t **parse_pathW (wchar_t * path)
 	      so also try down one level from the LD_LIBRARY_PATH
 	      components 
       */
-      if((i > 0) && (NULL != paths[i-1])) {
-        tmp = wcsrchr (paths[i - 1], PATH_SPLIT_W);
+      if((i > 0) && (NULL != cdir) && i < nelem) {
+        tmp = wcsrchr (cdir, PATH_SPLIT_W);
         if (tmp != NULL) {
 	        /* There was so copy it ... */
-	        paths[i] = mywcsdup (paths[i - 1]);
+	        paths[i] = mywcsdup (cdir);
 	        /* Find the path separator again */
 	        tmp = wcsrchr (paths[i], PATH_SPLIT_W);
 	        /* And truncate the path at that point */
-	        if(NULL != tmp) { 
+	        if(NULL != tmp) {
             *tmp = L'\0';
-          }
-	        i++;
-        }	 
+           }
+           i++;
+        }
       }
     }
     /* 
@@ -738,7 +761,7 @@ static wchar_t **parse_pathW (wchar_t * path)
        everything this leaves the application with the expected path/error
        not a path they know nothing about
     */
-    if(path != NULL) {
+    if(path != NULL && i < nelem) {
       paths[i++] = mywcsdup(path);
     }
     ICC_Free (myenv);
@@ -819,7 +842,7 @@ static char **parse_path (char *path)
   /* Allocate the array */
   paths = (char **)ICC_Calloc (nelem, sizeof (char *),__FILE__,__LINE__);
   i = 0;
-  if (path != NULL) {
+  if (path != NULL && i < nelem) {
     paths[i++] = mystrdup (path);
   }
 #ifdef OS400
@@ -831,12 +854,15 @@ static char **parse_path (char *path)
     myenv = mystrdup (env);
     ptr = myenv;
     while ((ptr != NULL) && (*ptr != '\0')) {
+      char* cdir = NULL;
+
       tmp = strchr (ptr, LIB_PATH_SPLIT);
       if (tmp != NULL) {
 	      *tmp++ = '\0';
       }
-      if(strlen(ptr) > 1) {
+      if(strlen(ptr) > 1 && i < nelem) {
 	      paths[i++] = mystrdup (ptr);
+         cdir = ptr;
       }
       ptr = tmp;
       /* 
@@ -844,11 +870,11 @@ static char **parse_path (char *path)
 	      so also try down one level from the LD_LIBRARY_PATH
 	      components 
       */
-      if((i > 0) && (NULL != paths[i-1])) {      
-        tmp = strrchr (paths[i - 1], PATH_SPLIT);
+      if((i > 0) && (NULL != cdir) && i < nelem) {
+        tmp = strrchr (cdir, PATH_SPLIT);
         if (tmp != NULL) {
 	        /* There was so copy it ... */
-	        paths[i] = mystrdup (paths[i - 1]);
+	        paths[i] = mystrdup (cdir);
 	        /* Find the path separator again */
           if(NULL != paths[i]) {
 	          tmp = strrchr (paths[i], PATH_SPLIT);
@@ -866,7 +892,7 @@ static char **parse_path (char *path)
        everything this leaves the application with the expected path/error
        not a path they know nothing about
     */	
-    if(path != NULL) {
+    if(path != NULL && i < nelem) {
       paths[i++] = mystrdup(path);
     }
     ICC_Free (myenv);
@@ -894,6 +920,25 @@ static void parse_path_cleanup (char **paths)
   }
 }
 
+#if defined(_WIN32)
+/*!
+ * @brief free an array of path components
+ * @param paths the array of paths to cleanup
+ */
+static void parse_path_cleanupW(wchar_t** paths)
+{
+   int i = 0;
+
+   if (paths != NULL) {
+      for (i = 0; paths[i] != NULL; i++) {
+         ICC_Free(paths[i]);
+         paths[i] = NULL; /* Just makes debug easier */
+      }
+      ICC_Free(paths);
+      paths = NULL;  /* debug */
+   }
+}
+#endif
 
 
 /*!
