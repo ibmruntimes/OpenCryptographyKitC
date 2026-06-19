@@ -15,6 +15,7 @@
 #include <openssl/evp.h>
 #include <string.h>
 #include "icc.h"
+#include "platform.h"
 #include "fips-prng/utils.h"
 
 extern void * CRYPTO_calloc(int nmemb,int size,const char *file, int line);
@@ -466,7 +467,7 @@ static int KU(unsigned char *in, int inl, unsigned char *out, int *outl, unsigne
 	  } 
 	  for(  ; i < 8; i++) { /* And check that the padding WAS 0's */
 	    if(R[j].F[i] != 0) {
-	      memset(out,0,*outl); /* On a padding error Scrub what was decrypted so far */
+	      ICC_securezero(out,*outl); /* On a padding error Scrub what was decrypted so far */
 	      (*outl) = 0;
 	      rv = SP800_38F_MAC; /* Padding error in final block */
 	    }
@@ -586,10 +587,7 @@ void Add_BE(unsigned char *dest,
 void *CRYPTO_calloc(int nmemb, int size,const char *file,int line)
 {
   void *ptr = NULL;
-  ptr = CRYPTO_malloc(nmemb*size,file,line);
-  if(NULL != ptr) {
-    memset(ptr,0,nmemb*size);
-  }
+  ptr = CRYPTO_zalloc(nmemb*size,file,line);
   return ptr;
 }
 int main(int argc, char *argv[])

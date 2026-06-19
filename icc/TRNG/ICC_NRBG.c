@@ -201,7 +201,7 @@ TRNG_ERRORS SetRNGError(const char *msg, const char *file, int line)
 
 const char * GetTRNGNameR(TRNG_TYPE trng) {
   const char *rv = "Invalid";
-  if(trng >= 0 && trng <= NTRNGS) {
+  if(trng >= 0 && trng < NTRNGS) {
     rv = (const char *)TRNG_ARRAY[trng].name;
   }
   return rv;
@@ -265,25 +265,25 @@ void checkTRNGAlias(char **trngname) {
 extern unsigned icc_failure; /*!< Trigger for induced failure tests */
 int SetTRNGName(char *trngname)
 {
+  int rv = 0;
   if (NULL != trngname) {
     MARK("Request to set TRNG to", trngname);
+    int i = 0;
+    checkTRNGAlias(&trngname);
+    for (i = 0; i < TRNG_count(); i++)
+    {
+       if (0 == strcasecmp(trngname, TRNG_ARRAY[i].name))
+       {
+          SetDefaultTrng(TRNG_ARRAY[i].type);
+          if (TRNG_ARRAY[i].type == (int)GetDefaultTrng()) {
+             rv = 1;
+          }
+          break;
+       }
+    }
   }
   else {
     MARK("Request to set NULL TRNG", "");
-  }
-  int rv = 0;
-  int i = 0;
-  checkTRNGAlias(&trngname);
-  for (i = 0; i < TRNG_count(); i++)
-  {
-    if (0 == strcasecmp(trngname,TRNG_ARRAY[i].name))
-    {
-      SetDefaultTrng(TRNG_ARRAY[i].type);
-      if (TRNG_ARRAY[i].type == (int)GetDefaultTrng()) {
-         rv = 1;
-      }
-      break;
-    }
   }
 
   return rv;
@@ -359,7 +359,7 @@ static TRNG_ERRORS TRNG_ESourceInit(E_SOURCE *es,int e_exp)
 {
   TRNG_ERRORS rv = TRNG_OK;
   if(NULL != es) {
-    memset(es->nbuf,0,sizeof(es->nbuf));
+    ICC_securezero(es->nbuf,sizeof(es->nbuf));
     es->cnt = 0;
     if(NULL != es->impl.avail) {
       if( 0 == (es->impl.avail())) {
@@ -408,7 +408,7 @@ static void TRNG_ESourceCleanup(E_SOURCE *es)
     if(NULL != es->impl.cleanup) {
       (es->impl.cleanup)(es);
     }
-    memset(es,0,sizeof(E_SOURCE));
+    ICC_securezero(es,sizeof(E_SOURCE));
   }
 }
 /*! @brief return the NRBG type that's the default within ICC and OpenSSL
@@ -511,7 +511,7 @@ void TRNG_LocalCleanup(TRNG *T)
     /* Clean up the long term test on the TRNG health */
     CleanupEntropyEstimator(T);
     /* Erase it all */
-    memset(T, 0, sizeof(TRNG));
+    ICC_securezero(T, sizeof(TRNG));
   }
 }
 /*!
@@ -539,7 +539,7 @@ TRNG_ERRORS TRNG_TRNG_Init(TRNG *T, TRNG_TYPE type) {
 
   unsigned int e_exp = 0; /* % entropy in the noise at the INPUT of the TRNG core, calced from the bits/byte in TRNG_TYPE */
 
-  if( (type < 0 ) || (type > NTRNGS) ){
+  if( (type < 0 ) || (type >= NTRNGS) ){
     type = global_trng_type;
   }
 
@@ -574,7 +574,7 @@ TRNG_ERRORS TRNG_TRNG_Init(TRNG *T, TRNG_TYPE type) {
     rv = TRNG_INIT;
   }
   if (TRNG_OK == rv) {
-    memset(T->lastdigest,0,sizeof(T->lastdigest));
+    ICC_securezero(T->lastdigest,sizeof(T->lastdigest));
     if (NULL == T->md) {
       T->md = EVP_get_digestbyname(TRNG_DIGEST);
     }
@@ -598,7 +598,7 @@ TRNG_ERRORS TRNG_TRNG_Init(TRNG *T, TRNG_TYPE type) {
     are initializing.
   */
   if (TRNG_OK == rv) {
-    memset(T->cond.key, 0, sizeof(T->cond.key));
+    ICC_securezero(T->cond.key, sizeof(T->cond.key));
   }
   if(TRNG_OK == rv) {
     /* Initialize the TRNG compressor */
@@ -617,7 +617,7 @@ TRNG_ERRORS TRNG_TRNG_Init(TRNG *T, TRNG_TYPE type) {
     /* TRNG retained data */
     Personalize(tmp);
     xcompress(T, T->cond.rdata, tmp, tmpl);
-    memset(tmp, 0, tmpl);
+    ICC_securezero(tmp, tmpl);
     ICC_Free(tmp);
     tmp = NULL;
   }

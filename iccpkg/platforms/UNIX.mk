@@ -7,10 +7,10 @@ $(AUXLIB_B)$(SHLSUFX): $(GSK_SDK) $(GSK_DIR) icc_aux$(OBJSUFX)
 	$(STRIP) $@
 	$(CP) $@ $(GSK_SDK)/
 
-$(GSK_LIBNAME): $(GSK_SDK) $(GSK_DIR) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
+$(GSK_LIBNAME): $(GSK_SDK) $(GSK_DIR) gsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(STKPK11) $(ZLIB_LIB) 
-	$(SLD) $(SLDFLAGS) gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
+	$(SLD) $(SLDFLAGS) gsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(STKPK11) $(ZLIB_LIB) $(EXPORT_FLAG)$(ICCPKG_EXPFILE) \
 		$(LDLIBS)
@@ -26,22 +26,22 @@ OLD_ICC_OBJ_CLEAN=$(RM) $(OLD_ICC_OBJ)
 endif
 
 # Static lib
-$(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
+$(GSK_LIB_STATIC): $(GSK_SDK)/static gsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(STKPK11) $(ZLIB_LIB)
 	echo static lib
 	$(OLD_ICC_OBJ_AR)
 	$(AR) $(ARFLAGS) \
-		gsk_wrap2$(OBJSUFX) $(EX_OBJS) \
+		gsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(EX_OBJS) \
 		$(TIMER_OBJS) $(ICC_ROOT)/icc/$(MYICC)$(OBJSUFX) $(OLD_ICC_OBJ) \
 		$(STKPK11) $(addprefix $(ICC_ROOT)/icc/,$(ZLIB_OBJ))
 	$(OLD_ICC_OBJ_CLEAN)
 
 # Java
-$(JGSK_LIBNAME): $(JGSK_SDK)/debug $(JGSK_DIR) jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
+$(JGSK_LIBNAME): $(JGSK_SDK)/debug $(JGSK_DIR) jgsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(JEX_OBJS) \
 		$(JTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB)
-	$(SLD) $(SLDFLAGS) jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) \
+	$(SLD) $(SLDFLAGS) jgsk_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) $(JEX_OBJS) \
 		$(JTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) $(EXPORT_FLAG)$(JCCPKG_EXPFILE) \
 		$(LDLIBS)
@@ -50,10 +50,10 @@ $(JGSK_LIBNAME): $(JGSK_SDK)/debug $(JGSK_DIR) jgsk_wrap2$(OBJSUFX) $(JEX_OBJS) 
 	$(CP) $@ $(JGSK_DIR)/
 
 # ICKC
-$(ICKC_LIBNAME): $(GSK_SDK) $(GSK_DIR) ickc_wrap2$(OBJSUFX) \
+$(ICKC_LIBNAME): $(GSK_SDK) $(GSK_DIR) ickc_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) \
 		$(ICKCTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB)
-	$(SLD) $(SLDFLAGS) ickc_wrap2$(OBJSUFX) \
+	$(SLD) $(SLDFLAGS) ickc_wrap2$(OBJSUFX) $(ICC_ROOT)/icc/iccsecurezero$(OBJSUFX) \
 		$(ICKCTIMER_OBJS) $(PACKAGE_DIR)/iccsdk/$(ICCLIB) $(MUPPET) \
 		$(ZLIB_LIB) $(EXPORT_FLAG)$(ICKCPKG_EXPFILE) \
 		$(LDLIBS)

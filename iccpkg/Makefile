@@ -513,11 +513,12 @@ cache_test$(OBJSUFX): gsk_wrap2.c gsk_wrap2_a.c $(ICC_ROOT)/icc/loaded.c name_ca
 # GSK_LIB and ICCPKG_LIBS is coming from gsk_crypto.mk - references the step import library
 # Note different from icc/icctest which links direct to the module
 # Note need to copy icctest.c from ../icc/ because ../icc/icc.h and ../icc/icc_a.h (module) conflict with step library headers in $(GSK_SDK)
+# Note "-" on the rm is because some platforms (WIN) still have a lock on the file after the compile.
 
 icctest$(OBJSUFX): $(ICC_ROOT)/icc/icctest.c $(SDK_HEADERS)
 	$(CP) $(ICC_ROOT)/icc/icctest.c .
 	$(CC) $(CFLAGS) -I$(GSK_SDK) -I$(ICC_ROOT)/icc -DICCPKG icctest.c
-	$(RM) icctest.c
+	-$(RM) icctest.c
 
 icctest$(EXESUFX): icctest$(OBJSUFX) $(GSK_LIB)
 	$(LD) $(LDFLAGS) icctest$(OBJSUFX) $(ICCPKG_LIBS) $(LDLIBS)
@@ -836,25 +837,37 @@ else
 CHKICCLOAD_ARGS=-f -n
 endif
 
+# $(GSK_SETUP)
+
 chkiccload_test:
 	$(CP) ./chkiccload$(EXESUFX) $(GSK_DIR); cd $(GSK_DIR); \
-	./chkiccload$(EXESUFX) $(CHKICCLOAD_ARGS) && $(RM) chkiccload$(EXESUFX)
+	$(SET_LIBRARY_PATH). ; \
+	./chkiccload$(EXESUFX) $(CHKICCLOAD_ARGS)
+	$(RM) $(GSK_DIR)/chkiccload$(EXESUFX)
 
 icctest_test:
-	$(CP) ./icctest$(EXESUFX) $(GSK_DIR); cd $(GSK_DIR); \
-	./icctest$(EXESUFX) && $(RM) icctest$(EXESUFX)
+	$(CP) ./icctest$(EXESUFX) $(GSK_DIR)
+	cd $(GSK_DIR); \
+	./icctest$(EXESUFX)
+	$(RM) $(GSK_DIR)/icctest$(EXESUFX)
 
 jcctest_test:
-	$(CP) ./jcctest$(EXESUFX) $(JGSK_DIR); cd $(JGSK_DIR); \
-	./jcctest$(EXESUFX) && $(RM) jcctest$(EXESUFX)
+	$(CP) ./jcctest$(EXESUFX) $(JGSK_DIR)
+	cd $(JGSK_DIR); \
+	./jcctest$(EXESUFX)
+	$(RM) $(JGSK_DIR)/jcctest$(EXESUFX)
 
 ickctest_test:
-	$(CP) ./ickctest$(EXESUFX) $(GSK_DIR); cd $(GSK_DIR); \
-	./ickctest$(EXESUFX) && $(RM) ickctest$(EXESUFX)
+	$(CP) ./ickctest$(EXESUFX) $(GSK_DIR) 
+	cd $(GSK_DIR); \
+	./ickctest$(EXESUFX)
+	$(RM) $(GSK_DIR)/ickctest$(EXESUFX)
 
 icctest_s_test:
-	$(CP) ./icctest_s$(EXESUFX) $(GSK_DIR); cd $(GSK_DIR); \
-	./icctest_s$(EXESUFX) && $(RM) icctest_s$(EXESUFX)
+	$(CP) ./icctest_s$(EXESUFX) $(GSK_DIR)
+	cd $(GSK_DIR); \
+	./icctest_s$(EXESUFX)
+	$(RM) $(GSK_DIR)/icctest_s$(EXESUFX)
 
 #
 # ---------------- End of JCEPlus stanzas --------------------------

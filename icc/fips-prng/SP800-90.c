@@ -259,7 +259,7 @@ static int matchstr(char *one, char *two, char delim) {
 */
 const char **get_SP800_90FIPS(void) {
   static int initialized = 0;
-  static char *FIPS_rng_list[sizeof(PRNG_list) / sizeof(SP800_90PRNG_t *)];
+  static char* FIPS_rng_list[sizeof(PRNG_list) / sizeof(SP800_90PRNG_t*)] = { NULL };
 
   int i = 0;
   int j = 0;
@@ -267,7 +267,6 @@ const char **get_SP800_90FIPS(void) {
   char *ptr = NULL;
 
   if (!initialized) {
-    memset(FIPS_rng_list, 0, sizeof(FIPS_rng_list));
     for (i = 0; NULL != PRNG_list[i]; i++) {
       exclude = 0;
       if (NULL != exclude_list) {
@@ -747,7 +746,7 @@ void Gen(PRNG_CTX *ctx,
   uint32_t t = 0;
   unsigned char tmp[CNT_SZ];
   
-  memset(tmp,0,CNT_SZ);
+  ICC_securezero(tmp,CNT_SZ);
 
   switch(ictx->state) {
   case SP800_90RESEED:
@@ -840,7 +839,7 @@ void Cln(PRNG_CTX *ctx)
   TRNG *trng = ictx->trng;
   ictx->trng = NULL;
   prng->Cleanup(ctx);
-  memset(ictx,0,sizeof(SP800_90PRNG_Data_t));
+  ICC_securezero(ictx,sizeof(SP800_90PRNG_Data_t));
   ictx->prng = prng;
   ictx->trng = trng;
   ictx->state = SP800_90UNINIT;
@@ -880,7 +879,7 @@ void PRNG_self_test(PRNG_CTX *ctx, PRNG *alg)
       ictx->TestMode = 1;
       for (i = 0; i < 4; i++)
       {
-        memset(out, 0, TEST_OUT_SIZE);
+        ICC_securezero(out, TEST_OUT_SIZE);
         data = &prng->TestData[i];
         if (NULL == data->InitEin)
           break;
@@ -919,7 +918,7 @@ void PRNG_self_test(PRNG_CTX *ctx, PRNG *alg)
         }
         else
         {
-          memset(out, 0, 1024);
+          ICC_securezero(out, TEST_OUT_SIZE);
           ictx->prng->Gen(ctx, out, data->GenRes->len,
                           (unsigned char *)data->GenAAD->buf, data->GenAAD->len);
         }
@@ -1355,7 +1354,7 @@ SP800_90STATE RNG_ReSeed(PRNG_CTX *ctx, unsigned char *adata,
           else
           {
             ictx->prng->Res(ctx, ictx->eBuf, einl, adata, adatal);
-            memset(ictx->eBuf, 0, einl);
+            ICC_securezero(ictx->eBuf, einl);
           }
         }
         break;
@@ -1369,14 +1368,14 @@ SP800_90STATE RNG_ReSeed(PRNG_CTX *ctx, unsigned char *adata,
         break;
       }
     }
+    state = ictx->state;
   }
-  else
+  else if (NULL != ictx)
   {
     ictx->state = SP800_90ERROR;
     ictx->error_reason = ERRAT(SP800_90_NOT_INIT);
+    state = ictx->state;
   }
-
-  state = ictx->state;
 
   return state;
 }
@@ -1751,7 +1750,7 @@ void RNG_CTX_free(PRNG_CTX *ctx)
       ictx->prng->Cln(ctx);
       ictx->prng = NULL;
     }
-    memset(ictx,0,sizeof(SP800_90PRNG_Data_t));
+    ICC_securezero(ictx,sizeof(SP800_90PRNG_Data_t));
     ICC_Free(ictx);
   }
 }

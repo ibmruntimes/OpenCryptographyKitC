@@ -21,6 +21,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
+#if defined (__APPLE__)
+  #define __STDC_WANT_LIB_EXT1__ 1
+#endif
+
 #include <string.h>
 #include <ctype.h>
 
@@ -262,6 +267,24 @@ void OPENSSL_cpuid_setup(void);
 
 /* Legacy, from when these could be set at startup */
 
+/*!
+  @brief
+  OpenSSL calloc function
+  @param n the number of blocks to allocate
+  @param sz the size of each block
+  @param file __FILE__, file where the allocation was requested
+  @param line __LINE__, line where the allocation was requested
+  @return NULL or the newly allocated block
+  @note OpenSSL doesn't provide a calloc, so we call it's zalloc which does what calloc does (zeros the buffer)
+*/
+void* CRYPTO_calloc(int n, int sz, const char* file, int line)
+{
+   void* tmp = NULL;
+   tmp = CRYPTO_zalloc(n * sz, file, line);
+   return tmp;
+}
+
+
 void *ICC_Malloc(size_t sz, const char *file, int line)
 {
   void *ptr = NULL;
@@ -292,6 +315,7 @@ void ICC_Free(void *ptr)
 {
     CRYPTO_free(ptr,__FILE__,__LINE__);       
 }
+
 static unsigned char x2bin(unsigned char b)
 {
   unsigned char c = 0;
@@ -545,10 +569,15 @@ static void EnvVars()
   tmp = getenv("ICC_FATAL");
   if (NULL != tmp) {
     MARK("ICC_FATAL", tmp);
+    /* default */
+    errorfile = stderr;
     if(0 == strcmp(tmp,"stdout")) {
-        errorfile = stdout;
-    } else if(0 == strcmp(tmp,"stderr")) {
-      errorfile = stderr;
+      errorfile = stdout;
+    } else if(0 == strcmp(tmp,"off") || 0 == strcmp(tmp, "0")) {
+      errorfile = NULL;
+    }
+    else {
+      MARK("ICC_FATAL", "invalid - default to stderr");
     }
   }
 
@@ -647,10 +676,15 @@ void SetParams(char *params[],int n)
         }
         if(0 == strncmp(params[i],"ICC_FATAL",strlen("ICC_FATAL"))) {
           MARK("ICC_FATAL", ptr);
+          /* default */
+          errorfile = stderr;
           if (0 == strcmp(ptr, "stdout")) {
             errorfile = stdout;
-          } else if(0 == strcmp(ptr,"stderr")) {
-            errorfile = stderr;
+          } else if(0 == strcmp(ptr,"off") || 0 == strcmp(ptr, "0")) {
+            errorfile = NULL;
+          }
+          else {
+            MARK("ICC_FATAL", "invalid - default to stderr");
           }
         }
       }
@@ -669,7 +703,7 @@ static void LoadTables(ICC_STATUS* status);
   @param self pointer to the file descriptor pointer for ourself (shared library)
   @param self may be NULL , sigfile must always be non-NULL
 */
-void OpenCheckFiles(FILE **sigfile,FILE **self) 
+void OpenCheckFiles(FILE **sigfile,FILE **self)
 {
   char *tmppath = NULL;
   char *ptr = NULL;
@@ -806,7 +840,7 @@ int ICCLoad ()
   /* CPUID must be determined before we set TRNG's */
   OPENSSL_cpuid_setup();
 
-  memset(params,0,sizeof(params));
+  ICC_securezero(params,sizeof(params));
 
 #if (NON_FIPS_ICC == 0)
 /* FIPS ICC, switch to FIPS TRNG by default */
@@ -1869,27 +1903,6 @@ int SelfTest (ICClib *pcb,ICC_STATUS * status)
 }
 
 
-/*!
-  @brief
-  OpenSSL calloc function
-  @param n the number of blocks to allocate
-  @param sz the size of each block
-  @param file __FILE__, file where the allocation was requested
-  @param line __LINE__, line where the allocation was requested
-  @return NULL or the newly allocated block
-  @note OpenSSL doesn't provide a calloc, so we call it's malloc and then
-  memset() the area to 0
-*/
-void *CRYPTO_calloc(int n,int sz,const char *file, int line)
-{
-  void *tmp = NULL;
-  tmp = CRYPTO_malloc(n*sz,file,line);
-  if(NULL != tmp) {
-    memset(tmp,0,n*sz);
-  }
-  return tmp;
-}
-
 /*! 
   @brief
   Free an MD context
@@ -2497,7 +2510,7 @@ typedef struct PQC_EVP_PKEY_s PQC_EVP_PKEY;
 #include "dilithium/ref/api.h"
 
 /* sphincs is not so well namespaced */
-/* so we have to undo definitions each time before redefining for a new algorith variant* /
+/* so we have to undo definitions each time before redefining for a new algorith variant */
 /* we are including the same header file with different namespacing so undef some clashing names */
 /* api.h includes params/params-...h so both header protections must be reset */
 
@@ -4769,10 +4782,13 @@ unsigned char *my_HKDF_Expand(const EVP_MD *evp_md,
   if (n > 255 || okm == NULL) {
     ret = NULL;
   }
-  if (NULL == (hmac = HMAC_CTX_new())) {
-    ret = NULL;
+  else {
+     hmac = HMAC_CTX_new();
+     if (NULL == hmac) {
+        ret = NULL;
+     }
   }
-  if( NULL != hmac) {
+  if ( NULL != hmac) {
     if (!HMAC_Init_ex(hmac, prk, (int)prk_len, evp_md, NULL)) {
       ret = NULL;
     } else {
@@ -4794,8 +4810,8 @@ unsigned char *my_HKDF_Expand(const EVP_MD *evp_md,
       }
     }
     HMAC_CTX_free(hmac);
+    ICC_securezero(prev, sizeof(prev));
   }
-  memset(prev,0,sizeof(prev));
   return ret;
 }
 
@@ -4819,7 +4835,7 @@ unsigned char *my_HKDF(const EVP_MD *evp_md,
   {
     ret = my_HKDF_Expand(evp_md, prk, prk_len, info, info_len, okm, okm_len);
   }
-  memset(prk, 0, sizeof(prk));
+  ICC_securezero(prk, sizeof(prk));
 
   return ret;
 }
@@ -5333,14 +5349,14 @@ int my_RSA_private_decrypt(ICClib *pcb,int flen, const unsigned char *from,unsig
   int rv = 0;
   int fips = 0;
   int len = 0;
-  int cklen = 0;
+  size_t cklen = 0;
 
   if(NULL != rsa) {
     len = RSA_size(rsa);
   }
   cklen = len;
-  if(len > flen) {
-    cklen = flen;
+  if(len > (unsigned)flen) {
+    cklen = (unsigned)flen;
   }
   rv = RSA_private_decrypt(flen,from,to,rsa,padding);
   if(1 == rv) {
@@ -5365,14 +5381,14 @@ int my_RSA_public_decrypt(ICClib *pcb,int flen, unsigned char *from,unsigned cha
   int rv = 0;
   int fips = 0;
   int len = 0;
-  int cklen = 0;
+  size_t cklen = 0;
 
   if(NULL != rsa) {
     len = RSA_size(rsa);
   }
   cklen = len;
-  if(len > flen) {
-    cklen = flen;
+  if(len > (unsigned)flen) {
+    cklen = (unsigned)flen;
   }
   rv = RSA_public_decrypt(flen,from,to,rsa,padding);
   if( 1 == rv) {
@@ -5621,7 +5637,7 @@ unsigned char *HKDF(ICClib *pcb,const EVP_MD *evp_md,
     return NULL;
 
   ret = HKDF_Expand(pcb,evp_md, prk, prk_len, info, info_len, okm, okm_len);
-  memset(prk,0,sizeof(prk));
+  ICC_securezero(prk,sizeof(prk));
  
   return ret;
 }

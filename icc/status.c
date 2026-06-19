@@ -56,7 +56,7 @@ int getErrorState(void) {
 ICCSTATIC void ICC_strlcat(char *base, const char *append,
                            unsigned int maxlen) {
   int l;
-  l = maxlen - strlen(base);
+  l = maxlen - strlen(base) - 1;
   if (l > 1) {
     strncat(base, append, l);
   }

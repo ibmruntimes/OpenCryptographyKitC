@@ -264,6 +264,7 @@ typedef pthread_mutex_t ICC_Mutex;
   typedef void  (*FreeFunc) (void *);
 
 
+void ICC_securezero(void* s, size_t n);
 
 
 #if !defined(ICC_Malloc)

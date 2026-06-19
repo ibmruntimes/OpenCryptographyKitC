@@ -942,6 +942,7 @@ TRNG_OBJS = timer_entropy$(OBJSUFX) timer_fips$(OBJSUFX) \
 LIBOBJS1 = fips$(OBJSUFX) \
 	platform$(OBJSUFX) \
 	iccerr$(OBJSUFX) status$(OBJSUFX) \
+	iccsecurezero$(OBJSUFX) \
 	fips-prng-RAND$(OBJSUFX) fips-prng-err$(OBJSUFX) \
 	SP800-90$(OBJSUFX) \
 	SP800-90HashData$(OBJSUFX) \
@@ -1241,6 +1242,9 @@ platform$(OBJSUFX): platform.c platform.h
 
 platfsl$(OBJSUFX): platfsl.c platfsl.h platform.h
 	$(CC) $(CFLAGS) -I$(OSSLINC_DIR) -I$(OSSL_DIR) -I./ -I$(SDK_DIR)/ platfsl.c
+
+iccsecurezero$(OBJSUFX): iccsecurezero.c platform.h
+	$(CC) $(CFLAGS) iccsecurezero.c
 
 # ICCLIB_LINK is never defined.
 

@@ -37,7 +37,7 @@ SOURCES = $(LIB_SOURCES) $(addprefix $(VARIANT)-,randombytes.c)
 DET_SOURCES = $(SOURCES:$(VARIANT)-randombytes.%=$(VARIANT)-rng.%) $(HASH_SOURCES)
 DET_HEADERS = $(HEADERS:$(VARIANT)-randombytes.%=$(VARIANT)-rng.%) $(HASH_HEADERS)
 
-TESTS =         test/fors \
+TESTS = test/fors \
 		test/spx \
 
 BENCHMARK = test/benchmark

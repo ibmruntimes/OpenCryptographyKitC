@@ -124,7 +124,7 @@ static void Update(SP800_90PRNG_Data_t *pctx)
   xor(pctx->T,pctx->T,pctx->C,pctx->prng->seedlen);
   /* Copy K & V from pctx->T and setup the new key */
   SetKV(pctx);  
-  memset(pctx->T,0,pctx->prng->seedlen);
+  ICC_securezero(pctx->T,pctx->prng->seedlen);
 }
 /*!
   @brief SP800-90 Cipher derivation function
@@ -222,7 +222,7 @@ static void Cipher_df(SP800_90PRNG_Data_t *pctx,DS *dsin)
     outl -= k;
   }
   /* And clear our scratch area */
-  memset(pctx->T,0,pctx->prng->OBL);
+  ICC_securezero(pctx->T,pctx->prng->OBL);
   EVP_CIPHER_CTX_cleanup(ctx);
   EVP_CIPHER_CTX_free(ctx);
 }
@@ -280,7 +280,7 @@ SP800_90STATE CIPHER_Instantiate(PRNG_CTX *ctx,
   /* Run "Update" with the provided seed */
   Update(pctx);
   /* And clean up the supplied AAD */
-  memset(pctx->C,0,pctx->prng->seedlen);
+  ICC_securezero(pctx->C,pctx->prng->seedlen);
   return pctx->state;
 }
 /*!
@@ -304,7 +304,7 @@ SP800_90STATE CIPHER_ReSeed(PRNG_CTX *ctx,
   Cipher_df(pctx,&ds);
   Update(pctx);
   /* And clean up the supplied data */
-  memset(pctx->C,0,pctx->prng->seedlen);
+  ICC_securezero(pctx->C,pctx->prng->seedlen);
   return pctx->state;
  
 }
@@ -368,9 +368,9 @@ SP800_90STATE CIPHER_Generate(PRNG_CTX *ctx,
   /* 
      Clear our temporary output buffer, 
   */
-  memset(pctx->T,0,pctx->prng->OBL);
+  ICC_securezero(pctx->T,pctx->prng->OBL);
   /* And clean up the supplied data */
-  memset(pctx->C,0,pctx->prng->seedlen); 
+  ICC_securezero(pctx->C,pctx->prng->seedlen);
   return pctx->state;
 }
 /*!

@@ -126,7 +126,11 @@ unsigned int pmaxLGetEnt(unsigned char *data, int len)
       minimum and evenly distributed is 2 (max entropy)
       Table lookup here because it's simpler.
      */
-    est = etabB[ilog2p];
+    if (ilog2p < sizeof(etabB) / sizeof(etabB[0])) {
+      est = etabB[ilog2p];
+    } else {
+      est = 200; /* Max entropy */
+    }
 
 #if defined(TEST_DOUBLE)
     printf("k = %d ", k);
